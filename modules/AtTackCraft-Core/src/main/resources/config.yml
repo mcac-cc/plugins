@@ -1,0 +1,15 @@
+server_id: ''
+mysql:
+  host: ''
+  database: ''
+  username: ''
+  password: ''
+mirai:
+  qq: ''
+  group: ''
+whitelist: false
+playerlistlogger: false
+broadcast: []
+bukkit:
+  commands_on_enable: []
+  world_protection: []

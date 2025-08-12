@@ -1,0 +1,5 @@
+name: AtTackCraft-Core
+version: '${project.version}'
+main: cc.mcac.attackcraftcore.ACBungee
+author: soto
+softdepend: [MiraiMC]
