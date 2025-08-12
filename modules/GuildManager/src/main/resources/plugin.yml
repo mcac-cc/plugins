@@ -1,0 +1,21 @@
+name: GuildManager
+version: ${project.version}
+main: com.mcatk.guildmanager.GuildManager
+authors: [ soto ]
+website: www.mcatk.com
+softdepend:
+  - Vault
+  - PlaceholderAPI
+  - AuthMe
+commands:
+  guildmanager:
+    description: main command
+    aliases: [ gmg ]
+  guildmanagers:
+    description: leader operate command
+    aliases: [ gmgs ]
+  guildmanageradmin:
+    description: admin command
+    aliases:
+      - gmga
+      - gmgadmin
