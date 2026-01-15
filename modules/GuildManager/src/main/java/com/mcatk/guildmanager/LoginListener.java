@@ -24,7 +24,7 @@ public class LoginListener implements Listener {
             } else {
                 // 非会长 会内公告
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(p.getName())) {
+                    if (SQLManager.getInstance().isGuildMember(guild.getId(), p.getName())) {
                         p.sendMessage(
                                 Msg.INFO + "§6" + guild.getGuildName() + " §7成员 §e" + player.getName() + " §7已上线"
                         );

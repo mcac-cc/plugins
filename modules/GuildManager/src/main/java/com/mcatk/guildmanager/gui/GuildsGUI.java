@@ -52,7 +52,7 @@ public class GuildsGUI implements Listener {
         ArrayList<String> des = new ArrayList<>();
         des.add("§b公会ID: §a" + guild.getId());
         des.add("§b会长: §a" + guild.getChairman());
-        des.add("§b成员: §a" + SQLManager.getInstance().getGuildMembers(guild.getId()).size() + "§7/§2" + GuildBasicInfo.getMaxPlayer(guild.getLevel()));
+        des.add("§b成员: §a" + SQLManager.getInstance().getGuildMemberCount(guild.getId()) + "§7/§2" + GuildBasicInfo.getMaxPlayer(guild.getLevel()));
         des.add("§b高级成员: §a" + GuildBasicInfo.getMaxAdvancedPlayer(guild.getLevel()));
         des.add("§b等级: §a" + guild.getLevel());
         des.add("§b积分: §a" + guild.getPoints());

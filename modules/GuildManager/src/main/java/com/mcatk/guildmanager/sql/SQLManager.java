@@ -143,11 +143,25 @@ public class SQLManager {
     }
 
     public ArrayList<String> getGuildMembers(String id) {
-        ArrayList<String> list = new ArrayList<>();
-        for (Member m : guilds.get(id).getMembers()) {
+        ArrayList<Member> members = guilds.get(id).getMembers();
+        ArrayList<String> list = new ArrayList<>(members.size());
+        for (Member m : members) {
             list.add(m.getId());
         }
         return list;
+    }
+
+    public int getGuildMemberCount(String id) {
+        return guilds.get(id).getMembers().size();
+    }
+
+    public boolean isGuildMember(String guildId, String memberId) {
+        for (Member m : guilds.get(guildId).getMembers()) {
+            if (m.getId().equals(memberId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public ArrayList<String> getGuildAdvancedMembers(String id) {
