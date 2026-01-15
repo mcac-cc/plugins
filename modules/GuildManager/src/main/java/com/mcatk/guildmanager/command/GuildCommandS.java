@@ -74,12 +74,12 @@ public class GuildCommandS implements CommandExecutor {
                 warp();
                 break;
             case "setvice1":
-                if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(args[1])) {
+                if (SQLManager.getInstance().isGuildMember(guild.getId(), args[1])) {
                     guild.setViceChairman1(args[1]);
                 }
                 break;
             case "setvice2":
-                if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(args[1])) {
+                if (SQLManager.getInstance().isGuildMember(guild.getId(), args[1])) {
                     guild.setViceChairman2(args[1]);
                 }
                 break;
@@ -188,7 +188,7 @@ public class GuildCommandS implements CommandExecutor {
             String playerName = args[2];
             if (operate.equalsIgnoreCase("add")) {
                 if (SQLManager.getInstance().getGuildAdvancedMembers(guild.getId()).size() < GuildBasicInfo.getMaxAdvancedPlayer(guild.getLevel())) {
-                    if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(playerName)) {
+                    if (SQLManager.getInstance().isGuildMember(guild.getId(), playerName)) {
                         Member member = SQLManager.getInstance().getMember(playerName);
                         member.setAdvanced(true);
                         SQLManager.getInstance().saveMember(member);
@@ -201,7 +201,7 @@ public class GuildCommandS implements CommandExecutor {
                     sender.sendMessage(Msg.ERROR + "已达到公会广场名单最大成员数");
                 }
             } else if (operate.equalsIgnoreCase("remove")) {
-                if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(playerName)) {
+                if (SQLManager.getInstance().isGuildMember(guild.getId(), playerName)) {
                     Member member = SQLManager.getInstance().getMember(playerName);
                     member.setAdvanced(false);
                     SQLManager.getInstance().saveMember(member);
