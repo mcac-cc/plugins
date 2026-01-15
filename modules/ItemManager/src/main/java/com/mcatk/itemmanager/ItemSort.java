@@ -32,6 +32,9 @@ public class ItemSort {
     }
     
     public ItemStack getItem(String id1, String id2) {
+        if (!itemsHashMap.containsKey(id1)) {
+            return null;
+        }
         return itemsHashMap.get(id1).getItemStackHashMap().get(id2);
     }
     
