@@ -117,4 +117,20 @@ public class MySQLManager {
         }
     }
 
+    public void addGems(String name, int amount) {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "INSERT INTO `gem` (`username`, `gems`, `total`) VALUES (?, ?, ?) " +
+                        "ON DUPLICATE KEY UPDATE `gems` = `gems` + ?, `total` = `total` + ?"
+        )) {
+            ps.setString(1, name);
+            ps.setInt(2, amount);
+            ps.setInt(3, amount);
+            ps.setInt(4, amount);
+            ps.setInt(5, amount);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
