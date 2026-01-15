@@ -4,6 +4,8 @@ import com.mcatk.guildmanager.GuildManager;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.models.Member;
 
+import org.bukkit.Bukkit;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,17 +25,21 @@ public class SQLManager {
         guilds = getAllGuildsFromSQL();
     }
 
-    private void connectMySQL() {
+    private Connection createConnection() throws SQLException {
         String ip = GuildManager.getPlugin().getConfig().getString("mysql.ip");
         String databaseName = GuildManager.getPlugin().getConfig().getString("mysql.databasename");
         String userName = GuildManager.getPlugin().getConfig().getString("mysql.username");
         String userPassword = GuildManager.getPlugin().getConfig().getString("mysql.password");
         int port = GuildManager.getPlugin().getConfig().getInt("mysql.port");
+        return DriverManager.getConnection(
+                "jdbc:mysql://" + ip + ":" + port + "/" + databaseName + "?autoReconnect=true&useSSL=false",
+                userName, userPassword
+        );
+    }
+
+    private void connectMySQL() {
         try {
-            connection = DriverManager.getConnection(
-                    "jdbc:mysql://" + ip + ":" + port + "/" + databaseName + "?autoReconnect=true&useSSL=false",
-                    userName, userPassword
-            );
+            connection = createConnection();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -165,8 +171,12 @@ public class SQLManager {
     }
 
     private HashMap<String, Guild> getAllGuildsFromSQL() {
+        return getAllGuildsFromSQL(this.connection);
+    }
+
+    private HashMap<String, Guild> getAllGuildsFromSQL(Connection conn) {
         HashMap<String, Guild> guilds = new HashMap<>();
-        try (PreparedStatement ps = connection.prepareStatement(SQLCommand.GET_ALL_GUILDS.toString())){
+        try (PreparedStatement ps = conn.prepareStatement(SQLCommand.GET_ALL_GUILDS.toString())){
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Guild g = new Guild();
@@ -180,7 +190,7 @@ public class SQLManager {
                 g.setCash(rs.getInt("guild_cash"));
                 g.setResidenceFLag(rs.getBoolean("guild_has_residence"));
                 g.setHasChangedName(rs.getBoolean("guild_has_changed_name"));
-                g.setMembers(getMembersFromSQL(g.getId()));
+                g.setMembers(getMembersFromSQL(g.getId(), conn));
                 guilds.put(g.getId(), g);
             }
         } catch (SQLException e) {
@@ -190,8 +200,12 @@ public class SQLManager {
     }
 
     private ArrayList<Member> getMembersFromSQL(String guildID) {
+        return getMembersFromSQL(guildID, this.connection);
+    }
+
+    private ArrayList<Member> getMembersFromSQL(String guildID, Connection conn) {
         ArrayList<Member> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement("SELECT * FROM `player_guild` WHERE guild_id = ?")){
+        try (PreparedStatement ps = conn.prepareStatement("SELECT * FROM `player_guild` WHERE guild_id = ?")){
             ps.setString(1, guildID);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -215,6 +229,17 @@ public class SQLManager {
 
     public void update() {
         guilds = getAllGuildsFromSQL();
+    }
+
+    public void updateAsync() {
+        try (Connection conn = createConnection()) {
+            HashMap<String, Guild> guilds = getAllGuildsFromSQL(conn);
+            Bukkit.getScheduler().runTask(GuildManager.getPlugin(), () -> {
+                this.guilds = guilds;
+            });
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 

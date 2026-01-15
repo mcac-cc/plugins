@@ -5,6 +5,6 @@ import org.bukkit.Bukkit;
 
 public class SQLUpdater {
     public void run() {
-        Bukkit.getScheduler().runTaskTimer(GuildManager.getPlugin(), () -> SQLManager.getInstance().update(), 20L * 60L, 20L * 60L);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(GuildManager.getPlugin(), () -> SQLManager.getInstance().updateAsync(), 20L * 60L, 20L * 60L);
     }
 }
