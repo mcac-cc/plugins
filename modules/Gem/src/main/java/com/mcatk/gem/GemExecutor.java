@@ -43,16 +43,7 @@ public class GemExecutor {
     }
 
     public void addGems(String name, int addGems) {
-        Integer gems = MySQLManager.getInstance().getGems(name);
-        if (MySQLManager.getInstance().getGems(name) == null) {
-            MySQLManager.getInstance().insertData(name);
-            gems = 0;
-        }
-        Integer total = MySQLManager.getInstance().getTotal(name);
-        gems += addGems;
-        total += addGems;
-        MySQLManager.getInstance().setGems(name, gems);
-        MySQLManager.getInstance().setTotal(name, total);
+        MySQLManager.getInstance().addGems(name, addGems);
         Gem.getPlugin().log(name + "获得宝石" + addGems);
     }
 }
