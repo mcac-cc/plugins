@@ -5,8 +5,10 @@ import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.models.Member;
 
 import java.sql.*;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class SQLManager {
     private Connection connection;
@@ -21,6 +23,10 @@ public class SQLManager {
     private SQLManager() {
         connectMySQL();
         guilds = getAllGuildsFromSQL();
+    }
+
+    protected SQLManager(HashMap<String, Guild> guilds) {
+        this.guilds = guilds;
     }
 
     private void connectMySQL() {
@@ -142,12 +148,19 @@ public class SQLManager {
         }
     }
 
-    public ArrayList<String> getGuildMembers(String id) {
-        ArrayList<String> list = new ArrayList<>();
-        for (Member m : guilds.get(id).getMembers()) {
-            list.add(m.getId());
-        }
-        return list;
+    public List<String> getGuildMembers(String id) {
+        final List<Member> members = guilds.get(id).getMembers();
+        return new AbstractList<String>() {
+            @Override
+            public String get(int index) {
+                return members.get(index).getId();
+            }
+
+            @Override
+            public int size() {
+                return members.size();
+            }
+        };
     }
 
     public ArrayList<String> getGuildAdvancedMembers(String id) {
