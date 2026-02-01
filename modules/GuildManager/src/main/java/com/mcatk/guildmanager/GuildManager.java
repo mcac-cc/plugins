@@ -17,7 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
-public final class GuildManager extends JavaPlugin {
+public class GuildManager extends JavaPlugin {
 
     private static GuildManager plugin;
     private static Economy econ;
@@ -62,7 +62,7 @@ public final class GuildManager extends JavaPlugin {
 
     private void registerCommand() {
         Bukkit.getPluginCommand("guildmanager").
-                setExecutor(new GuildCommand());
+                setExecutor(new GuildCommand(this, getGuildService()));
         Bukkit.getPluginCommand("guildmanagers").
                 setExecutor(new GuildCommandS());
         getLogger().info("注册指令注册完毕");
