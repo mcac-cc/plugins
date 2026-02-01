@@ -11,22 +11,34 @@ import java.io.IOException;
 
 public class FileOperation {
     
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final File shopsFile;
-    private final Gson gson;
     
     public FileOperation() {
-        shopsFile = new File(AcShop.getPlugin().getDataFolder(), "shopsFile.json");
-        gson = new GsonBuilder().setPrettyPrinting().create();
+        this(AcShop.getPlugin().getDataFolder());
+    }
+
+    public FileOperation(File dataFolder) {
+        this.shopsFile = new File(dataFolder, "shopsFile.json");
     }
     
     public void saveShops(Shops shops) {
-        try {
-            FileWriter writer = new FileWriter(shopsFile);
+        try (FileWriter writer = new FileWriter(shopsFile)) {
             gson.toJson(shops, writer);
-            writer.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void saveShopsAsync(Shops shops) {
+        final String json = gson.toJson(shops);
+        org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(AcShop.getPlugin(), () -> {
+            try (FileWriter writer = new FileWriter(shopsFile)) {
+                writer.write(json);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
     
     public Shops loadShops() {
