@@ -3,6 +3,7 @@ package com.mcatk.medalcabinet;
 import com.mcatk.medalcabinet.command.MedalAdminCmd;
 import com.mcatk.medalcabinet.command.MedalShowCmd;
 import com.mcatk.medalcabinet.command.MedalUsualCmd;
+import com.mcatk.medalcabinet.listener.MedalPlayerListener;
 import com.mcatk.medalcabinet.papi.MedalPapi;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,6 +22,7 @@ public final class MedalCabinet extends JavaPlugin {
         saveDefaultConfig();
         regCommand();
         regDependency();
+        Bukkit.getPluginManager().registerEvents(new MedalPlayerListener(), this);
         getLogger().info("启动成功");
     }
 

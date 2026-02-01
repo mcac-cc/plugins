@@ -5,18 +5,30 @@ import com.mcatk.medalcabinet.medal.Medal;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SQLManager {
     private Connection connection;
 
     private static SQLManager instance = null;
+    private final Map<String, Medal> mainMedalCache = new ConcurrentHashMap<>();
+    private static final Medal EMPTY_MEDAL = new Medal("", "", "", "");
 
     public static SQLManager getInstance() {
         return instance == null ? instance = new SQLManager() : instance;
     }
 
+    public static void setInstance(SQLManager instance) {
+        SQLManager.instance = instance;
+    }
+
     private SQLManager() {
         connectMySQL();
+    }
+
+    protected SQLManager(Connection connection) {
+        this.connection = connection;
     }
 
     private void connectMySQL() {
@@ -157,6 +169,12 @@ public class SQLManager {
                 ps.setString(2, medalID);
                 ps.setString(3, medalID);
                 ps.executeUpdate();
+
+                Medal newMain = getMedal(medalID);
+                if (newMain != null) {
+                    mainMedalCache.put(playerID, newMain);
+                }
+
                 return true;
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -166,6 +184,11 @@ public class SQLManager {
     }
 
     public Medal getMainMedal(String playerID) {
+        if (mainMedalCache.containsKey(playerID)) {
+            Medal cached = mainMedalCache.get(playerID);
+            return cached == EMPTY_MEDAL ? null : cached;
+        }
+
         Medal medal = null;
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT medal_id FROM `player_main_medal` WHERE player_id = ?"
@@ -178,7 +201,12 @@ public class SQLManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        mainMedalCache.put(playerID, medal == null ? EMPTY_MEDAL : medal);
         return medal;
+    }
+
+    public void clearCache(String playerID) {
+        mainMedalCache.remove(playerID);
     }
 
 }
