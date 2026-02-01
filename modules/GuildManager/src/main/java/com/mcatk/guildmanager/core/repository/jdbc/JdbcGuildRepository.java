@@ -181,8 +181,25 @@ public class JdbcGuildRepository implements GuildRepository {
                 g.setCash(rs.getInt("guild_cash"));
                 g.setResidenceFLag(rs.getBoolean("guild_has_residence"));
                 g.setHasChangedName(rs.getBoolean("guild_has_changed_name"));
-                g.setMembers(getMembersFromSQL(g.getId()));
                 guilds.put(g.getId(), g);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        try (PreparedStatement ps = getConnection().prepareStatement(SqlCommand.GET_ALL_MEMBERS.toString())) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Member m = new Member(
+                        rs.getString("player_id"),
+                        rs.getString("guild_id"),
+                        rs.getInt("player_contribution"),
+                        rs.getBoolean("player_is_advanced")
+                );
+                Guild g = guilds.get(m.getGuildID());
+                if (g != null) {
+                    g.getMembers().add(m);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
