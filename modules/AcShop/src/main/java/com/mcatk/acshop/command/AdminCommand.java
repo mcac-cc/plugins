@@ -47,7 +47,7 @@ public class AdminCommand implements CommandExecutor {
                 break;
             default:
         }
-        new FileOperation().saveShops(AcShop.getShops());
+        new FileOperation().saveShopsAsync(AcShop.getShops());
         return true;
     }
     
