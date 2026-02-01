@@ -3,7 +3,6 @@ package com.mcatk.guildmanager.gui;
 import com.mcatk.guildmanager.GuildManager;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.models.GuildBasicInfo;
-import com.mcatk.guildmanager.sql.SQLManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -36,7 +35,7 @@ public class GuildsGUI implements Listener {
     public Inventory getGuildsGui() {
         Inventory gui = Bukkit.createInventory(null, 54, "§6公会列表");
         guildGUIMap = new HashMap<>();
-        for (Guild guild : SQLManager.getInstance().getGuilds().values()) {
+        for (Guild guild : GuildManager.getPlugin().getGuildService().getGuilds().values()) {
             ItemStack button = getAnGuildButton(guild);
             guildGUIMap.put(button, new GuildGUI(guild));
             gui.addItem(button);
@@ -52,7 +51,7 @@ public class GuildsGUI implements Listener {
         ArrayList<String> des = new ArrayList<>();
         des.add("§b公会ID: §a" + guild.getId());
         des.add("§b会长: §a" + guild.getChairman());
-        des.add("§b成员: §a" + SQLManager.getInstance().getGuildMembers(guild.getId()).size() + "§7/§2" + GuildBasicInfo.getMaxPlayer(guild.getLevel()));
+        des.add("§b成员: §a" + GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).size() + "§7/§2" + GuildBasicInfo.getMaxPlayer(guild.getLevel()));
         des.add("§b高级成员: §a" + GuildBasicInfo.getMaxAdvancedPlayer(guild.getLevel()));
         des.add("§b等级: §a" + guild.getLevel());
         des.add("§b积分: §a" + guild.getPoints());

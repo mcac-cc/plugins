@@ -1,7 +1,6 @@
 package com.mcatk.guildmanager;
 
 import com.mcatk.guildmanager.models.Guild;
-import com.mcatk.guildmanager.sql.SQLManager;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -60,7 +59,7 @@ public class GuildItem implements Listener {
             Player player = event.getPlayer();
             if (player.getInventory().getItemInMainHand().isSimilar(tpTicket)) {
                 String playerID = player.getName();
-                Guild guild = SQLManager.getInstance().getPlayerGuild(playerID);
+                Guild guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(playerID);
                 if (guild == null) {
                     player.sendMessage(Msg.INFO + "你没有公会");
                 } else {
@@ -78,4 +77,3 @@ public class GuildItem implements Listener {
         item.setAmount(n);
     }
 }
-

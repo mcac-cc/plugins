@@ -4,7 +4,6 @@ import com.mcatk.guildmanager.GuildManager;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.models.GuildBasicInfo;
 import com.mcatk.guildmanager.models.Member;
-import com.mcatk.guildmanager.sql.SQLManager;
 import org.bukkit.OfflinePlayer;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +42,7 @@ public class GuildPapi extends PlaceholderExpansion {
         if (player == null) {
             return "";
         }
-        Guild guild = SQLManager.getInstance().getPlayerGuild(player.getName());
+        Guild guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(player.getName());
         if (guild == null) {
             return "";
         }
@@ -76,7 +75,7 @@ public class GuildPapi extends PlaceholderExpansion {
             return Integer.toString(guild.getLevel());
         }
         if (identifier.equals("num_player")) {
-            return Integer.toString(SQLManager.getInstance().getGuildMembers(guild.getId()).size());
+            return Integer.toString(GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).size());
         }
         if (identifier.equals("max_player")) {
             return Integer.toString(GuildBasicInfo.getMaxPlayer(guild.getLevel()));
@@ -85,7 +84,7 @@ public class GuildPapi extends PlaceholderExpansion {
             return Integer.toString(GuildBasicInfo.getMaxAdvancedPlayer(guild.getLevel()));
         }
         //玩家的相关变量
-        Member member = SQLManager.getInstance().getMember(player.getName());
+        Member member = GuildManager.getPlugin().getGuildService().getMember(player.getName());
         if (identifier.equals("contribution")) {
             return Integer.toString(member.getContribution());
         }

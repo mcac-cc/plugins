@@ -7,7 +7,6 @@ import com.mcatk.guildmanager.models.ApplicantsList;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.models.GuildBasicInfo;
 import com.mcatk.guildmanager.models.Member;
-import com.mcatk.guildmanager.sql.SQLManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,7 +27,7 @@ public class GuildCommandS implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         this.sender = sender;
         this.args = args;
-        this.guild = SQLManager.getInstance().getPlayerGuild(sender.getName());
+        this.guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(sender.getName());
         if (guild == null) {
             sender.sendMessage(Msg.ERROR + "您不在任何公会");
             return true;
@@ -46,7 +45,7 @@ public class GuildCommandS implements CommandExecutor {
         } catch (ParaLengthException e) {
             sender.sendMessage(String.valueOf(e));
         }
-        SQLManager.getInstance().saveGuild(guild);
+        GuildManager.getPlugin().getGuildService().saveGuild(guild);
         return true;
     }
 
@@ -74,12 +73,12 @@ public class GuildCommandS implements CommandExecutor {
                 warp();
                 break;
             case "setvice1":
-                if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(args[1])) {
+                if (GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).contains(args[1])) {
                     guild.setViceChairman1(args[1]);
                 }
                 break;
             case "setvice2":
-                if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(args[1])) {
+                if (GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).contains(args[1])) {
                     guild.setViceChairman2(args[1]);
                 }
                 break;
@@ -118,9 +117,9 @@ public class GuildCommandS implements CommandExecutor {
             throw new ParaLengthException(2);
         } else {
             if (ApplicantsList.getApplicantsList().getList(guild.getId()).contains(args[1])) {
-                if (SQLManager.getInstance().getGuildAdvancedMembers(guild.getId()).size() < GuildBasicInfo.getMaxPlayer(guild.getLevel())) {
+                if (GuildManager.getPlugin().getGuildService().getGuildAdvancedMembers(guild.getId()).size() < GuildBasicInfo.getMaxPlayer(guild.getLevel())) {
                     ApplicantsList.getApplicantsList().getList(guild.getId()).remove(args[1]);
-                    SQLManager.getInstance().addMember(args[1], guild.getId());
+                    GuildManager.getPlugin().getGuildService().addMember(args[1], guild.getId());
                     sender.sendMessage(Msg.INFO + "添加成功");
                 } else {
                     sender.sendMessage(Msg.ERROR + "成员已满");
@@ -143,7 +142,7 @@ public class GuildCommandS implements CommandExecutor {
             if (playerID.equalsIgnoreCase(sender.getName())) {
                 sender.sendMessage(Msg.ERROR + "不能删除你自己");
             } else {
-                SQLManager.getInstance().removeMember(playerID, guild.getId());
+                GuildManager.getPlugin().getGuildService().removeMember(playerID, guild.getId());
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), String.format("res pset main.gh %s move true", playerID));
             }
         }
@@ -187,11 +186,11 @@ public class GuildCommandS implements CommandExecutor {
             String operate = args[1];
             String playerName = args[2];
             if (operate.equalsIgnoreCase("add")) {
-                if (SQLManager.getInstance().getGuildAdvancedMembers(guild.getId()).size() < GuildBasicInfo.getMaxAdvancedPlayer(guild.getLevel())) {
-                    if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(playerName)) {
-                        Member member = SQLManager.getInstance().getMember(playerName);
+                if (GuildManager.getPlugin().getGuildService().getGuildAdvancedMembers(guild.getId()).size() < GuildBasicInfo.getMaxAdvancedPlayer(guild.getLevel())) {
+                    if (GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).contains(playerName)) {
+                        Member member = GuildManager.getPlugin().getGuildService().getMember(playerName);
                         member.setAdvanced(true);
-                        SQLManager.getInstance().saveMember(member);
+                        GuildManager.getPlugin().getGuildService().saveMember(member);
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), String.format("res pset main.gh %s move true", playerName));
                         sender.sendMessage(Msg.INFO + "增加成功");
                     } else {
@@ -201,10 +200,10 @@ public class GuildCommandS implements CommandExecutor {
                     sender.sendMessage(Msg.ERROR + "已达到公会广场名单最大成员数");
                 }
             } else if (operate.equalsIgnoreCase("remove")) {
-                if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(playerName)) {
-                    Member member = SQLManager.getInstance().getMember(playerName);
+                if (GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).contains(playerName)) {
+                    Member member = GuildManager.getPlugin().getGuildService().getMember(playerName);
                     member.setAdvanced(false);
-                    SQLManager.getInstance().saveMember(member);
+                    GuildManager.getPlugin().getGuildService().saveMember(member);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), String.format("res pset main.gh %s move remove", playerName));
                 } else {
                     sender.sendMessage(Msg.ERROR + "不是公会成员");

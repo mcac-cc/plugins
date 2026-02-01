@@ -7,7 +7,6 @@ import com.mcatk.guildmanager.gui.GuildsGUI;
 import com.mcatk.guildmanager.models.ApplicantsList;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.models.Member;
-import com.mcatk.guildmanager.sql.SQLManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -37,7 +36,7 @@ public class GuildCommand implements CommandExecutor {
         if (args.length == 0) {
             printHelp();
         } else {
-            this.guild = SQLManager.getInstance().getPlayerGuild(sender.getName());
+            this.guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(sender.getName());
             try {
                 onCommandWithoutGuild();
                 //以下要求发送者在一个公会之中
@@ -81,11 +80,11 @@ public class GuildCommand implements CommandExecutor {
         if (args.length != 2) {
             throw new ParaLengthException(2);
         }
-        if (SQLManager.getInstance().getPlayerGuild(sender.getName()) != null) {
+        if (GuildManager.getPlugin().getGuildService().getPlayerGuild(sender.getName()) != null) {
             sender.sendMessage(Msg.ERROR + "已有公会");
         } else {
             String guildID = args[1];
-            Guild guild = SQLManager.getInstance().getGuild(guildID);
+            Guild guild = GuildManager.getPlugin().getGuildService().getGuild(guildID);
             if (guild == null) {
                 sender.sendMessage(Msg.ERROR + "不存在公会");
             } else {
@@ -108,7 +107,7 @@ public class GuildCommand implements CommandExecutor {
             sender.sendMessage(Msg.ERROR + "ID只能是小写字母");
             return;
         }
-        Guild guild = SQLManager.getInstance().getPlayerGuild(sender.getName());
+        Guild guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(sender.getName());
         if (guild != null) {
             sender.sendMessage(Msg.ERROR + "你已在公会" + guild.getGuildName());
             return;
@@ -118,8 +117,8 @@ public class GuildCommand implements CommandExecutor {
             return;
         }
         if (GuildManager.getPlugin().takePlayerMoney((Player) sender, 1000000)) {
-            SQLManager.getInstance().createGuild(guildID, sender.getName());
-            SQLManager.getInstance().addMember(sender.getName(), guildID);
+            GuildManager.getPlugin().getGuildService().createGuild(guildID, sender.getName());
+            GuildManager.getPlugin().getGuildService().addMember(sender.getName(), guildID);
             sender.sendMessage(Msg.INFO + "创建成功");
             GuildManager.getPlugin().getLogger().info("玩家" + sender.getName() + "创建了公会" + args[1]);
         } else {
@@ -150,7 +149,7 @@ public class GuildCommand implements CommandExecutor {
         if (GuildManager.getPlugin().takePlayerMoney((Player) sender, n)) {
             guild.setCash(guild.getCash() + n / 10000);
             //add contribution and check if is full.
-            Member member = SQLManager.getInstance().getMember(sender.getName());
+            Member member = GuildManager.getPlugin().getGuildService().getMember(sender.getName());
             if (member.getContribution() + n / 10000 > 100) {
                 sender.sendMessage(Msg.INFO + "您的贡献值已满，无法继续增长");
             } else {
@@ -161,7 +160,8 @@ public class GuildCommand implements CommandExecutor {
                             "§a捐赠" + n + "AC" + "折合为" + (n / 10000) + "公会资金"
             );
             GuildManager.getPlugin().getLogger().info(p + "捐献了" + n + "给" + guild.getGuildName());
-            SQLManager.getInstance().saveGuild(guild);
+            GuildManager.getPlugin().getGuildService().saveMember(member);
+            GuildManager.getPlugin().getGuildService().saveGuild(guild);
         } else {
             sender.sendMessage(Msg.ERROR + "AC点不足！");
         }
@@ -171,7 +171,7 @@ public class GuildCommand implements CommandExecutor {
         if (guild.isManager(sender.getName())) {
             sender.sendMessage("请先撤销你的公会职务");
         } else {
-            SQLManager.getInstance().removeMember(sender.getName(), guild.getId());
+            GuildManager.getPlugin().getGuildService().removeMember(sender.getName(), guild.getId());
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), String.format("res pset main.gh %s move remove", sender.getName()));
             sender.sendMessage(Msg.INFO + "退出公会" + guild.getGuildName());
         }

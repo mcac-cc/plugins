@@ -2,7 +2,6 @@ package com.mcatk.guildmanager.gui;
 
 import com.mcatk.guildmanager.GuildManager;
 import com.mcatk.guildmanager.models.Guild;
-import com.mcatk.guildmanager.sql.SQLManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -55,7 +54,7 @@ public class GuildGUI implements Listener {
         ItemMeta meta = icon.getItemMeta();
         meta.setDisplayName("§9成员列表");
         ArrayList<String> members = new ArrayList<>();
-        for (String member : SQLManager.getInstance().getGuildMembers(guild.getId())) {
+        for (String member : GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId())) {
             members.add("§e" + member);
         }
         meta.setLore(members);

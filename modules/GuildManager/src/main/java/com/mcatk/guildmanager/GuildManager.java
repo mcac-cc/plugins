@@ -2,9 +2,12 @@ package com.mcatk.guildmanager;
 
 import com.mcatk.guildmanager.command.GuildCommand;
 import com.mcatk.guildmanager.command.GuildCommandS;
+import com.mcatk.guildmanager.core.config.DbConfig;
+import com.mcatk.guildmanager.core.repository.GuildRepository;
+import com.mcatk.guildmanager.core.repository.jdbc.JdbcGuildRepository;
+import com.mcatk.guildmanager.core.service.GuildService;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.papi.GuildPapi;
-import com.mcatk.guildmanager.sql.SQLManager;
 import com.mcatk.guildmanager.sql.SQLUpdater;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -18,15 +21,21 @@ public final class GuildManager extends JavaPlugin {
 
     private static GuildManager plugin;
     private static Economy econ;
+    private GuildService guildService;
 
     public static GuildManager getPlugin() {
         return plugin;
+    }
+
+    public GuildService getGuildService() {
+        return guildService;
     }
 
     @Override
     public void onEnable() {
         plugin = this;
         saveDefaultConfig();
+        initGuildService();
         registerDependency();
         registerCommand();
         registerListener();
@@ -71,7 +80,8 @@ public final class GuildManager extends JavaPlugin {
     public void tpAll(Guild guild, Player player) {
         for (Player p :
                 getServer().getOnlinePlayers()) {
-            if (guild.getId().equals(SQLManager.getInstance().getPlayerGuild(p.getName()).getId())) {
+            Guild targetGuild = guildService.getPlayerGuild(p.getName());
+            if (targetGuild != null && guild.getId().equals(targetGuild.getId())) {
                 player.chat("/tpahere " + p.getName());
             }
         }
@@ -94,6 +104,17 @@ public final class GuildManager extends JavaPlugin {
     public boolean takePlayerMoney(Player p, double m) {
         EconomyResponse r = econ.withdrawPlayer(p, m);
         return r.transactionSuccess();
+    }
+
+    private void initGuildService() {
+        String ip = getConfig().getString("mysql.ip");
+        String databaseName = getConfig().getString("mysql.databasename");
+        String userName = getConfig().getString("mysql.username");
+        String userPassword = getConfig().getString("mysql.password");
+        int port = getConfig().getInt("mysql.port");
+        DbConfig dbConfig = new DbConfig(ip, port, databaseName, userName, userPassword);
+        GuildRepository repository = new JdbcGuildRepository(dbConfig);
+        guildService = new GuildService(repository);
     }
 
 }

@@ -1,7 +1,6 @@
 package com.mcatk.guildmanager;
 
 import com.mcatk.guildmanager.models.Guild;
-import com.mcatk.guildmanager.sql.SQLManager;
 import fr.xephi.authme.events.LoginEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -13,7 +12,7 @@ public class LoginListener implements Listener {
     @EventHandler
     public void onAuth(LoginEvent e) {
         Player player = e.getPlayer();
-        Guild guild = SQLManager.getInstance().getPlayerGuild(player.getName());
+        Guild guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(player.getName());
         if (guild != null) {
             // 玩家有公会
             if (guild.getChairman().equals(player.getName())) {
@@ -24,7 +23,7 @@ public class LoginListener implements Listener {
             } else {
                 // 非会长 会内公告
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (SQLManager.getInstance().getGuildMembers(guild.getId()).contains(p.getName())) {
+                    if (GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).contains(p.getName())) {
                         p.sendMessage(
                                 Msg.INFO + "§6" + guild.getGuildName() + " §7成员 §e" + player.getName() + " §7已上线"
                         );

@@ -1,6 +1,6 @@
-package com.mcatk.guildmanager.sql;
+package com.mcatk.guildmanager.core.repository.jdbc;
 
-public enum SQLCommand {
+public enum SqlCommand {
     CREATE_GUILD(
             "INSERT INTO `guild` " +
                     "(`guild_id`, `guild_chairman`)" +
@@ -29,9 +29,6 @@ public enum SQLCommand {
                     "    t.guild_has_changed_name = ? " +
                     "WHERE t.guild_id = ?"
     ),
-    GET_GUILD(
-            "SELECT * FROM guild WHERE guild_id = ?"
-    ),
     UPDATE_PLAYER(
             "UPDATE `player_guild` t " +
                     "SET t.player_is_advanced  = ?, " +
@@ -47,21 +44,13 @@ public enum SQLCommand {
     GET_PLAYER_GUILD(
             "SELECT * FROM player_guild JOIN guild g on player_guild.guild_id = g.guild_id WHERE player_id = ?"
     ),
-    GET_GUILD_PLAYERS(
-            "SELECT * FROM player_guild WHERE guild_id = ?"
-    ),
-    GET_GUILD_ADVANCED_PLAYERS(
-            "SELECT * FROM player_guild WHERE guild_id = ? AND player_is_advanced = true"
-    ),
-
-
-
-
-    ;
+    GET_GUILD(
+            "SELECT * FROM guild WHERE guild_id = ?"
+    );
 
     private final String command;
 
-    SQLCommand(String command) {
+    SqlCommand(String command) {
         this.command = command;
     }
 
