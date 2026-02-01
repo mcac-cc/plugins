@@ -15,8 +15,16 @@ public class SQLManager {
         return instance == null ? instance = new SQLManager() : instance;
     }
 
+    public static void setInstance(SQLManager instance) {
+        SQLManager.instance = instance;
+    }
+
     private SQLManager() {
         connectMySQL();
+    }
+
+    protected SQLManager(Connection connection) {
+        this.connection = connection;
     }
 
     private void connectMySQL() {
@@ -168,12 +176,17 @@ public class SQLManager {
     public Medal getMainMedal(String playerID) {
         Medal medal = null;
         try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT medal_id FROM `player_main_medal` WHERE player_id = ?"
+                "SELECT m.* FROM `medal` m INNER JOIN `player_main_medal` pmm ON m.medal_id = pmm.medal_id WHERE pmm.player_id = ?"
         )) {
             ps.setString(1, playerID);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                medal = getMedal(rs.getString("medal_id"));
+                medal = new Medal(
+                        rs.getString("medal_id"),
+                        rs.getString("medal_name"),
+                        rs.getString("medal_material"),
+                        rs.getString("medal_description")
+                );
             }
         } catch (SQLException e) {
             e.printStackTrace();
