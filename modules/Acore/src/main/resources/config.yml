@@ -1,0 +1,6 @@
+server-id: "velocity"
+player-list-to-db-interval: 60
+database:
+  jdbc-url: "jdbc:mysql://localhost:3306/ac_info"
+  username: "username"
+  password: "password"
