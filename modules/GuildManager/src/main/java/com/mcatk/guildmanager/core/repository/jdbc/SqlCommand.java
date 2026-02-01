@@ -38,6 +38,9 @@ public enum SqlCommand {
     GET_PLAYER(
             "SELECT * FROM player_guild WHERE player_id = ?"
     ),
+    GET_ALL_MEMBERS(
+            "SELECT * FROM player_guild"
+    ),
     GET_ALL_GUILDS(
             "SELECT * FROM guild"
     ),
