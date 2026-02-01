@@ -41,7 +41,7 @@ public class CommandGem implements CommandExecutor {
         }
         switch (args[0].toLowerCase()) {
             case "set":
-                set();
+                set(sender, args);
                 break;
             case "check":
                 check();
@@ -60,13 +60,20 @@ public class CommandGem implements CommandExecutor {
         return true;
     }
 
-    private void set() {
+    private void set(CommandSender sender, String[] args) {
         if (args.length != 3) {
             sendParameterError();
         } else {
             try {
-                Gem.getPlugin().getGemExecutor().setGems(args[1], Integer.parseInt(args[2]));
-                sender.sendMessage(Message.INFO + args[1] + " 的宝石设置为： " + args[2]);
+                final String playerName = args[1];
+                final int gems = Integer.parseInt(args[2]);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        Gem.getPlugin().getGemExecutor().setGems(playerName, gems);
+                        sender.sendMessage(Message.INFO + playerName + " 的宝石设置为： " + gems);
+                    }
+                }.runTaskAsynchronously(Gem.getPlugin());
             } catch (NumberFormatException e) {
                 sender.sendMessage(Message.ERROR + "宝石必须是整数");
             }
