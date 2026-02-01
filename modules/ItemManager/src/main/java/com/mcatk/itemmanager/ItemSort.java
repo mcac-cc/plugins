@@ -28,7 +28,7 @@ public class ItemSort {
         }
         itemsHashMap.get(id1).getItemStackHashMap().put(id2, itemStack);
         ItemManager.getPlugin().getConfig().set(id1 + "." + id2, itemStack);
-        ItemManager.getPlugin().saveConfig();
+        ItemManager.getPlugin().saveConfigAsync();
     }
     
     public ItemStack getItem(String id1, String id2) {
