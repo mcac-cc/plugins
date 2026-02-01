@@ -15,7 +15,12 @@ public class SQLManager {
         return instance == null ? instance = new SQLManager() : instance;
     }
 
-    private SQLManager() {
+    // For testing
+    public static void setInstance(SQLManager instance) {
+        SQLManager.instance = instance;
+    }
+
+    protected SQLManager() {
         connectMySQL();
     }
 
