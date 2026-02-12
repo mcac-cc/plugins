@@ -11,7 +11,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public final class Gem extends JavaPlugin {
+public class Gem extends JavaPlugin {
     
     private static Gem plugin;
     private GemExecutor gemExecutor;
