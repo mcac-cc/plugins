@@ -13,6 +13,10 @@ public class VipShop {
 //        new BukkitRunnable() {
 //            @Override
 //            public void run() {
+                if (!vipType.equals("vip") && !vipType.equals("svip") && !vipType.equals("mvp")) {
+                    player.sendMessage(Message.ERROR + "参数错误");
+                    return;
+                }
                 if (player.hasPermission("cmi.command.se")) {
                     player.sendMessage(Message.INFO + "已拥有VIP");
                 } else if (Gem.getPlugin().getGemExecutor().
