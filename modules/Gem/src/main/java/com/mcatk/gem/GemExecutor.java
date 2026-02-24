@@ -44,7 +44,9 @@ public class GemExecutor {
 
     public void addGems(String name, int addGems) {
         Integer gems = MySQLManager.getInstance().getGems(name);
-        if (MySQLManager.getInstance().getGems(name) == null) {
+        // [Bolt] Optimization: Reused 'gems' variable instead of calling MySQLManager.getGems(name) again.
+        // This saves one database query per addGems call.
+        if (gems == null) {
             MySQLManager.getInstance().insertData(name);
             gems = 0;
         }

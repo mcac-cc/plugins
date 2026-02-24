@@ -9,10 +9,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class CommandGem implements CommandExecutor {
-    private CommandSender sender;
-    private String[] args;
 
-    private void printHelp() {
+    private void printHelp(CommandSender sender) {
         sender.sendMessage("/gem set <player> <gems> 设置宝石");
         sender.sendMessage("/gem delete <player> 删除全部数据");
         sender.sendMessage("/gem check <player>  查看宝石");
@@ -23,114 +21,182 @@ public class CommandGem implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        this.sender = sender;
-        this.args = args;
         if (!sender.isOp()) {
+            // [Bolt] Execute database query asynchronously to avoid blocking the main thread
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     int gems = Gem.getPlugin().getGemExecutor().getGems(sender.getName());
-                    sender.sendMessage(Message.INFO + "你的宝石：" + gems);
+                    // Sync back to main thread for sending message
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            sender.sendMessage(Message.INFO + "你的宝石：" + gems);
+                        }
+                    }.runTask(Gem.getPlugin());
                 }
             }.runTaskAsynchronously(Gem.getPlugin());
             return true;
         }
         if (args.length == 0) {
-            printHelp();
+            printHelp(sender);
             return true;
         }
         switch (args[0].toLowerCase()) {
             case "set":
-                set();
+                set(sender, args);
                 break;
             case "check":
-                check();
+                check(sender, args);
                 break;
             case "add":
-                add();
+                add(sender, args);
                 break;
             case "take":
-                take();
+                take(sender, args);
                 break;
             case "total":
-                total();
+                total(sender, args);
                 break;
             default:
         }
         return true;
     }
 
-    private void set() {
+    private void set(CommandSender sender, String[] args) {
         if (args.length != 3) {
-            sendParameterError();
+            sendParameterError(sender);
         } else {
-            try {
-                Gem.getPlugin().getGemExecutor().setGems(args[1], Integer.parseInt(args[2]));
-                sender.sendMessage(Message.INFO + args[1] + " 的宝石设置为： " + args[2]);
-            } catch (NumberFormatException e) {
-                sender.sendMessage(Message.ERROR + "宝石必须是整数");
-            }
-        }
-    }
-
-    private void check() {
-        if (args.length != 2) {
-            sendParameterError();
-        } else {
-            Integer gems = Gem.getPlugin().getGemExecutor().getGems(args[1]);
-            sender.sendMessage(Message.INFO + args[1] + " 现在有 " + gems + " 宝石");
-        }
-    }
-
-    private void total() {
-        if (args.length != 2) {
-            sendParameterError();
-        } else {
-            Integer gems = Gem.getPlugin().getGemExecutor().getTotalGems(args[1]);
-            sender.sendMessage(Message.INFO + args[1] + " 累计 " + gems + " 宝石");
-        }
-    }
-
-    private void take() {
-        if (args.length != 3) {
-            sendParameterError();
-        } else {
-            try {
-                int gems = Integer.parseInt(args[2]);
-                if (Gem.getPlugin().getGemExecutor().takeGems(args[1], gems)) {
-                    sender.sendMessage(Message.INFO + args[1] + " 减少 " + gems + " 宝石");
-                } else {
-                    sender.sendMessage(Message.ERROR + args[1] + " 宝石不足");
+            // [Bolt] Execute database update asynchronously
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    try {
+                        Gem.getPlugin().getGemExecutor().setGems(args[1], Integer.parseInt(args[2]));
+                        // Sync back to main thread for message
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                sender.sendMessage(Message.INFO + args[1] + " 的宝石设置为： " + args[2]);
+                            }
+                        }.runTask(Gem.getPlugin());
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(Message.ERROR + "宝石必须是整数");
+                    }
                 }
-            } catch (NumberFormatException e) {
-                sender.sendMessage(Message.ERROR + "宝石必须是整数");
-            }
+            }.runTaskAsynchronously(Gem.getPlugin());
         }
     }
 
-    private void add() {
-        if (args.length != 3) {
-            sendParameterError();
+    private void check(CommandSender sender, String[] args) {
+        if (args.length != 2) {
+            sendParameterError(sender);
         } else {
-            try {
-                int addGems = Integer.parseInt(args[2]);
-                Gem.getPlugin().getGemExecutor().addGems(args[1], addGems);
-                int gems = Gem.getPlugin().getGemExecutor().getGems(args[1]);
-                sender.sendMessage(Message.INFO + args[1] +
-                        " 增加了 " + addGems + " 宝石, 现在有 " + gems + " 宝石");
-                if (Bukkit.getPlayer(args[1]) != null) {
-                    Bukkit.getPlayer(args[1]).sendMessage("收到 " + addGems + " 宝石, 现在有 " + gems + " 宝石");
+            // [Bolt] Execute database query asynchronously
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    Integer gems = Gem.getPlugin().getGemExecutor().getGems(args[1]);
+                    // Sync back to main thread
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            sender.sendMessage(Message.INFO + args[1] + " 现在有 " + gems + " 宝石");
+                        }
+                    }.runTask(Gem.getPlugin());
                 }
-            } catch (NumberFormatException e) {
-                sender.sendMessage(Message.ERROR + "宝石必须是整数");
-            }
+            }.runTaskAsynchronously(Gem.getPlugin());
         }
     }
 
-    private void sendParameterError() {
+    private void total(CommandSender sender, String[] args) {
+        if (args.length != 2) {
+            sendParameterError(sender);
+        } else {
+            // [Bolt] Execute database query asynchronously
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    Integer gems = Gem.getPlugin().getGemExecutor().getTotalGems(args[1]);
+                    // Sync back to main thread
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            sender.sendMessage(Message.INFO + args[1] + " 累计 " + gems + " 宝石");
+                        }
+                    }.runTask(Gem.getPlugin());
+                }
+            }.runTaskAsynchronously(Gem.getPlugin());
+        }
+    }
+
+    private void take(CommandSender sender, String[] args) {
+        if (args.length != 3) {
+            sendParameterError(sender);
+        } else {
+            // [Bolt] Execute database update asynchronously
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    try {
+                        int gems = Integer.parseInt(args[2]);
+                        boolean success = Gem.getPlugin().getGemExecutor().takeGems(args[1], gems);
+                        // Sync back to main thread
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if (success) {
+                                    sender.sendMessage(Message.INFO + args[1] + " 减少 " + gems + " 宝石");
+                                } else {
+                                    sender.sendMessage(Message.ERROR + args[1] + " 宝石不足");
+                                }
+                            }
+                        }.runTask(Gem.getPlugin());
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(Message.ERROR + "宝石必须是整数");
+                    }
+                }
+            }.runTaskAsynchronously(Gem.getPlugin());
+        }
+    }
+
+    private void add(CommandSender sender, String[] args) {
+        if (args.length != 3) {
+            sendParameterError(sender);
+        } else {
+            // [Bolt] Execute database update asynchronously
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    try {
+                        int addGems = Integer.parseInt(args[2]);
+                        Gem.getPlugin().getGemExecutor().addGems(args[1], addGems);
+                        int gems = Gem.getPlugin().getGemExecutor().getGems(args[1]);
+
+                        // Sync back to main thread for Bukkit API usage (getPlayer) and messaging
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                sender.sendMessage(Message.INFO + args[1] +
+                                        " 增加了 " + addGems + " 宝石, 现在有 " + gems + " 宝石");
+
+                                org.bukkit.entity.Player target = Bukkit.getPlayer(args[1]);
+                                if (target != null) {
+                                    target.sendMessage("收到 " + addGems + " 宝石, 现在有 " + gems + " 宝石");
+                                }
+                            }
+                        }.runTask(Gem.getPlugin());
+
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(Message.ERROR + "宝石必须是整数");
+                    }
+                }
+            }.runTaskAsynchronously(Gem.getPlugin());
+        }
+    }
+
+    private void sendParameterError(CommandSender sender) {
         sender.sendMessage(Message.ERROR + "参数长度有误");
     }
 
 }
-
-
