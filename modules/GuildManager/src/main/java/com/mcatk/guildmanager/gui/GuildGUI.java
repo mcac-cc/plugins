@@ -66,6 +66,9 @@ public class GuildGUI implements Listener {
         ItemStack icon = new ItemStack(Material.GOLD_NUGGET);
         ItemMeta meta = icon.getItemMeta();
         meta.setDisplayName("§e返回");
+        ArrayList<String> lore = new ArrayList<>();
+        lore.add("§7点击返回公会列表");
+        meta.setLore(lore);
         icon.setItemMeta(meta);
         return icon;
     }
