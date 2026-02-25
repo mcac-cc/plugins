@@ -25,29 +25,42 @@ public class ItemShop {
     }
     
     public void buyItem(Player player, String shopId, String itemId) {
-//        new BukkitRunnable() {
-//            @Override
-//            public void run() {
-                if (itemsMap.get(shopId) == null) {
-                    player.sendMessage(Message.ERROR + "无该分类");
-                }
-                if (!itemsMap.get(shopId).getMap().containsKey(itemId)) {
-                    player.sendMessage(Message.ERROR + "无该商品");
-                } else if (
-                        Gem.getPlugin().getGemExecutor().takeGems(
-                                player.getName(),
-                                itemsMap.get(shopId).getMap().get(itemId).getPrice()
-                        )
-                ) {
-                    player.getInventory().addItem(
-                            itemsMap.get(shopId).getMap().get(itemId).getItemStack()
-                    );
-                    player.sendMessage(Message.INFO + "购买成功");
-                } else {
-                    player.sendMessage(Message.INFO + "宝石不足");
-                }
-//            }
-//        }.runTaskAsynchronously(Gem.getPlugin());
+        if (itemsMap.get(shopId) == null) {
+            player.sendMessage(Message.ERROR + "无该分类");
+            return;
+        }
+        if (!itemsMap.get(shopId).getMap().containsKey(itemId)) {
+            player.sendMessage(Message.ERROR + "无该商品");
+            return;
+        }
+
+        Item item = itemsMap.get(shopId).getMap().get(itemId);
+        int price = item.getPrice();
+        String playerName = player.getName();
+
+        // Perform database operation asynchronously to prevent main thread blocking
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                boolean success = Gem.getPlugin().getGemExecutor().takeGems(playerName, price);
+
+                // Switch back to main thread for inventory update
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (!player.isOnline()) {
+                            return;
+                        }
+                        if (success) {
+                            player.getInventory().addItem(item.getItemStack());
+                            player.sendMessage(Message.INFO + "购买成功");
+                        } else {
+                            player.sendMessage(Message.INFO + "宝石不足");
+                        }
+                    }
+                }.runTask(GemShop.getPlugin());
+            }
+        }.runTaskAsynchronously(GemShop.getPlugin());
     }
     
     public void addItem(Player player, String shopId, String itemId, String price) {
