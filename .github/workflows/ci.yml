@@ -14,17 +14,17 @@ permissions:
 
 jobs:
   build-maven-modules:
-    name: Build Maven Modules
+    name: Build Maven Modules (JDK17, with tests)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 8 (Maven cache)
+      - name: Set up Java 17 (Maven cache)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '8'
+          java-version: '17'
           cache: maven
 
       - name: Build all Maven modules
@@ -55,6 +55,41 @@ jobs:
           name: maven-jars
           path: modules/*/target/*.jar
           if-no-files-found: warn
+
+  build-maven-java8-compat:
+    name: Maven Java 8 Compatibility (package only)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 8 (Maven cache)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - name: Build all Maven modules with Java 8 (skip tests)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          modules=(
+            "ItemManager"
+            "Gem"
+            "AcShop"
+            "GemShop"
+            "GuildManager"
+            "MedalCabinet"
+            "AtTackCraft-Core"
+          )
+
+          for module in "${modules[@]}"; do
+            echo "::group::Building ${module} on Java 8"
+            mvn -B -ntp -f "modules/${module}/pom.xml" -Dmaven.test.skip=true clean install
+            echo "::endgroup::"
+          done
 
   build-acore-gradle:
     name: Build Acore (Gradle)
