@@ -44,7 +44,8 @@ public class GemExecutor {
 
     public void addGems(String name, int addGems) {
         Integer gems = MySQLManager.getInstance().getGems(name);
-        if (MySQLManager.getInstance().getGems(name) == null) {
+        // Optimization: Use local variable 'gems' instead of calling getGems again to avoid redundant DB query.
+        if (gems == null) {
             MySQLManager.getInstance().insertData(name);
             gems = 0;
         }
