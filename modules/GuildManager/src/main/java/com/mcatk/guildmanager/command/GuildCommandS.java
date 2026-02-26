@@ -8,6 +8,7 @@ import com.mcatk.guildmanager.models.ApplicantsList;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.models.GuildBasicInfo;
 import com.mcatk.guildmanager.models.Member;
+import com.mcatk.guildmanager.GuildManager; // Imported explicitly as it was used implicitly via package context but good to be safe if moved, though package is same. Actually it's in com.mcatk.guildmanager, this is command subpackage. So import is needed.
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -15,10 +16,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class GuildCommandS implements CommandExecutor {
-    private GuildItem guildItem;
-    private CommandSender sender;
-    private String[] args;
-    private Guild guild;
+    private final GuildItem guildItem;
 
     public GuildCommandS() {
         this.guildItem = new GuildItem();
@@ -26,9 +24,7 @@ public class GuildCommandS implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        this.sender = sender;
-        this.args = args;
-        this.guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(sender.getName());
+        Guild guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(sender.getName());
         if (guild == null) {
             sender.sendMessage(Msg.ERROR + "您不在任何公会");
             return true;
@@ -38,11 +34,11 @@ public class GuildCommandS implements CommandExecutor {
             return true;
         }
         if (args.length == 0) {
-            printHelp();
+            printHelp(sender);
             return true;
         }
         try {
-            onCommandChairman();
+            onCommandChairman(sender, args, guild);
         } catch (ParaLengthException e) {
             sender.sendMessage(String.valueOf(e));
         }
@@ -50,28 +46,28 @@ public class GuildCommandS implements CommandExecutor {
         return true;
     }
 
-    private void onCommandChairman() throws ParaLengthException {
+    private void onCommandChairman(CommandSender sender, String[] args, Guild guild) throws ParaLengthException {
         switch (args[0].toLowerCase()) {
             case "app":
-                app();
+                app(sender, args, guild);
                 break;
             case "remove":
-                remove();
+                remove(sender, args, guild);
                 break;
             case "buytpall":
-                buyTpAll();
+                buyTpAll(sender, args, guild);
                 break;
             case "advance":
-                advance();
+                advance(sender, args, guild);
                 break;
             case "setname":
-                setName();
+                setName(sender, args, guild);
                 break;
             case "res":
-                res();
+                res(sender, args, guild);
                 break;
             case "warp":
-                warp();
+                warp(sender, args, guild);
                 break;
             case "setvice1":
                 if (GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).contains(args[1])) {
@@ -84,13 +80,13 @@ public class GuildCommandS implements CommandExecutor {
                 }
                 break;
             case "buy":
-                buy();
+                buy(sender, args, guild);
             default:
         }
     }
 
     // usage: /gmgs setname|levelup|res create|res remove|warp set|warp del|position set|position removve|setally|advance add|advance remove|app|remove|buytpall|tpall|clearmsg
-    void printHelp() {
+    void printHelp(CommandSender sender) {
         sender.sendMessage("§e------------公会操作帮助------------");
         sender.sendMessage("§a/gmgs setname <name>  §2公会名称设置");
         sender.sendMessage("§a/gmgs levelup  §2公会升级");
@@ -107,7 +103,7 @@ public class GuildCommandS implements CommandExecutor {
         sender.sendMessage("§a/gmgs buy nametag");
     }
 
-    void app() throws ParaLengthException {
+    void app(CommandSender sender, String[] args, Guild guild) throws ParaLengthException {
         if (args.length == 1) {
             sender.sendMessage("申请列表:");
             for (String p : ApplicantsList.getApplicantsList().getList(guild.getId())) {
@@ -131,11 +127,11 @@ public class GuildCommandS implements CommandExecutor {
         }
     }
 
-    private void sendParameterError() {
+    private void sendParameterError(CommandSender sender) {
         sender.sendMessage(Msg.ERROR + "参数长度错误");
     }
 
-    private void remove() throws ParaLengthException {
+    private void remove(CommandSender sender, String[] args, Guild guild) throws ParaLengthException {
         if (args.length != 2) {
             throw new ParaLengthException(2);
         } else {
@@ -149,7 +145,7 @@ public class GuildCommandS implements CommandExecutor {
         }
     }
 
-    private void buyTpAll() {
+    private void buyTpAll(CommandSender sender, String[] args, Guild guild) {
         int flag = 0;
         if (args.length == 1) {
             flag = guildItem.buyTpTickets(guild, (Player) sender, 1);
@@ -161,7 +157,7 @@ public class GuildCommandS implements CommandExecutor {
                 sender.sendMessage(Msg.ERROR + "请输入整数");
             }
         } else {
-            sendParameterError();
+            sendParameterError(sender);
         }
         switch (flag) {
             case 0:
@@ -180,7 +176,7 @@ public class GuildCommandS implements CommandExecutor {
         }
     }
 
-    private void advance() throws ParaLengthException {
+    private void advance(CommandSender sender, String[] args, Guild guild) throws ParaLengthException {
         if (args.length != 3) {
             throw new ParaLengthException(3);
         } else {
@@ -213,7 +209,7 @@ public class GuildCommandS implements CommandExecutor {
         }
     }
 
-    private void setName() throws ParaLengthException {
+    private void setName(CommandSender sender, String[] args, Guild guild) throws ParaLengthException {
         if (args.length != 2) {
             throw new ParaLengthException(2);
         } else {
@@ -255,14 +251,14 @@ public class GuildCommandS implements CommandExecutor {
 //        }
 //    }
 
-    private void res() {
+    private void res(CommandSender sender, String[] args, Guild guild) {
         if (args.length == 1) {
             sender.sendMessage(Msg.ERROR + "缺少参数 set 或 del");
         } else if (args[1].equalsIgnoreCase("set")) {
             if (guild.getResidenceFLag()) {
                 sender.sendMessage(Msg.ERROR + "请勿重复设置领地, 领地已存在");
             } else {
-                executeCommandWithOP(String.format("/resadmin create guild_%s", guild.getId()));
+                executeCommandWithOP(sender, String.format("/resadmin create guild_%s", guild.getId()));
                 guild.setResidenceFLag(true);
             }
         } else if (args[1].equalsIgnoreCase("del")) {
@@ -277,20 +273,20 @@ public class GuildCommandS implements CommandExecutor {
         }
     }
 
-    private void warp() throws ParaLengthException {
+    private void warp(CommandSender sender, String[] args, Guild guild) throws ParaLengthException {
         if (args.length != 2) {
             throw new ParaLengthException(2);
         } else {
             if (args[1].equalsIgnoreCase("set")) {
-                executeCommandWithOP(String.format("/setwarp %s false", guild.getGuildName()));
+                executeCommandWithOP(sender, String.format("/setwarp %s false", guild.getGuildName()));
             }
             if (args[1].equalsIgnoreCase("del")) {
-                executeCommandWithOP(String.format("/delwarp %s", guild.getGuildName()));
+                executeCommandWithOP(sender, String.format("/delwarp %s", guild.getGuildName()));
             }
         }
     }
 
-    private void buy() throws ParaLengthException {
+    private void buy(CommandSender sender, String[] args, Guild guild) throws ParaLengthException {
         if (args.length != 2) {
             throw new ParaLengthException(2);
         }
@@ -305,12 +301,24 @@ public class GuildCommandS implements CommandExecutor {
         }
     }
 
-    private void executeCommandWithOP(String command) {
+    private void executeCommandWithOP(CommandSender sender, String command) {
+        if (!(sender instanceof Player)) {
+            // Cannot op non-player (console already has permissions usually, but logic here assumes player)
+            // If console runs this, performCommand might fail or behave differently.
+            // But this command is for players in a guild mainly.
+            Bukkit.dispatchCommand(sender, command.startsWith("/") ? command.substring(1) : command);
+            return;
+        }
         Player player = (Player) sender;
-        player.setOp(true);
-        player.chat(command);
-        player.setOp(false);
+        boolean wasOp = player.isOp();
+        try {
+            player.setOp(true);
+            player.chat(command);
+        } finally {
+            if (!wasOp) {
+                player.setOp(false);
+            }
+        }
     }
 
 }
-    
