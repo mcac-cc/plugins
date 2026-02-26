@@ -45,6 +45,9 @@ public class ItemShopGui {
         ItemStack icon =  new ItemStack(Material.GOLD_NUGGET);
         ItemMeta meta = icon.getItemMeta();
         meta.setDisplayName("返回");
+        ArrayList<String> lore = new ArrayList<>();
+        lore.add("§7点击返回主菜单");
+        meta.setLore(lore);
         icon.setItemMeta(meta);
         return icon;
     }
