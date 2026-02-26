@@ -70,7 +70,7 @@ public class AdminCommand implements CommandExecutor {
     }
     
     private void addItemStackItem(String shopId, String itemId, int price) {
-        // 商品类型固定为保留字 Shop-xxx
+        // 商品类型固定为保留字 Shop_<shopId>
         String sortId = "Shop_" + shopId;
         ItemManager.addItem(sortId, itemId,
                 ((Player) sender).getInventory().getItemInMainHand());
