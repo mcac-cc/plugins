@@ -40,6 +40,7 @@ jobs:
             "GuildManager"
             "MedalCabinet"
             "AtTackCraft-Core"
+            "Acore"
           )
 
           for module in "${modules[@]}"; do
@@ -90,33 +91,3 @@ jobs:
             mvn -B -ntp -f "modules/${module}/pom.xml" -Dmaven.test.skip=true clean install
             echo "::endgroup::"
           done
-
-  build-acore-gradle:
-    name: Build Acore (Gradle)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17 (Gradle cache)
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-
-      - name: Build Acore
-        working-directory: modules/Acore
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x gradlew
-          ./gradlew --no-daemon clean build
-
-      - name: Upload Acore artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: acore-jars
-          path: modules/Acore/build/libs/*.jar
-          if-no-files-found: warn
