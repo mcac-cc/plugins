@@ -45,6 +45,9 @@ public class GuildGUI implements Listener {
         ItemStack icon = new ItemStack(Material.ENDER_PEARL);
         ItemMeta meta = icon.getItemMeta();
         meta.setDisplayName("§9传送到公会领地");
+        ArrayList<String> lore = new ArrayList<>();
+        lore.add("§7点击传送到公会领地");
+        meta.setLore(lore);
         icon.setItemMeta(meta);
         return icon;
     }
@@ -66,6 +69,9 @@ public class GuildGUI implements Listener {
         ItemStack icon = new ItemStack(Material.GOLD_NUGGET);
         ItemMeta meta = icon.getItemMeta();
         meta.setDisplayName("§e返回");
+        ArrayList<String> lore = new ArrayList<>();
+        lore.add("§7点击返回公会列表");
+        meta.setLore(lore);
         icon.setItemMeta(meta);
         return icon;
     }

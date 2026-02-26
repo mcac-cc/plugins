@@ -56,6 +56,8 @@ public class GuildsGUI implements Listener {
         des.add("§b等级: §a" + guild.getLevel());
         des.add("§b积分: §a" + guild.getPoints());
         des.add("§b资金: §a" + guild.getCash());
+        des.add("");
+        des.add("§e点击查看详情");
         meta.setLore(des);
         item.setItemMeta(meta);
         return item;
@@ -65,6 +67,9 @@ public class GuildsGUI implements Listener {
         ItemStack icon = new ItemStack(Material.GOLD_NUGGET);
         ItemMeta meta = icon.getItemMeta();
         meta.setDisplayName("§e返回");
+        ArrayList<String> lore = new ArrayList<>();
+        lore.add("§7点击返回主菜单");
+        meta.setLore(lore);
         icon.setItemMeta(meta);
         return icon;
     }
