@@ -11,9 +11,6 @@ commands:
   guildmanager:
     description: main command
     aliases: [ gmg ]
-  guildmanagers:
-    description: leader operate command
-    aliases: [ gmgs ]
   guildmanageradmin:
     description: admin command
     aliases:

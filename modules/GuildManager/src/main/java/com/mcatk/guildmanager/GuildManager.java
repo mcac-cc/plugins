@@ -1,7 +1,6 @@
 package com.mcatk.guildmanager;
 
 import com.mcatk.guildmanager.command.GuildCommand;
-import com.mcatk.guildmanager.command.GuildCommandS;
 import com.mcatk.guildmanager.core.config.DbConfig;
 import com.mcatk.guildmanager.core.repository.GuildRepository;
 import com.mcatk.guildmanager.core.repository.jdbc.JdbcGuildRepository;
@@ -63,8 +62,6 @@ public final class GuildManager extends JavaPlugin {
     private void registerCommand() {
         Bukkit.getPluginCommand("guildmanager").
                 setExecutor(new GuildCommand());
-        Bukkit.getPluginCommand("guildmanagers").
-                setExecutor(new GuildCommandS());
         getLogger().info("注册指令注册完毕");
     }
 
