@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-maven-modules:
+    name: Build Maven Modules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 8 (Maven cache)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - name: Build all Maven modules
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          modules=(
+            "ItemManager"
+            "Gem"
+            "AcShop"
+            "GemShop"
+            "GuildManager"
+            "MedalCabinet"
+            "AtTackCraft-Core"
+          )
+
+          for module in "${modules[@]}"; do
+            echo "::group::Building ${module}"
+            mvn -B -ntp -f "modules/${module}/pom.xml" clean install
+            echo "::endgroup::"
+          done
+
+      - name: Upload Maven artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-jars
+          path: modules/*/target/*.jar
+          if-no-files-found: warn
+
+  build-acore-gradle:
+    name: Build Acore (Gradle)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17 (Gradle cache)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Build Acore
+        working-directory: modules/Acore
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon clean build
+
+      - name: Upload Acore artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acore-jars
+          path: modules/Acore/build/libs/*.jar
+          if-no-files-found: warn
