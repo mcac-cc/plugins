@@ -1,5 +1,6 @@
 package com.mcatk.guildmanager.command;
 
+import com.mcatk.guildmanager.GuildManager;
 import com.mcatk.guildmanager.GuildItem;
 import com.mcatk.guildmanager.Msg;
 import com.mcatk.guildmanager.exceptions.ParaLengthException;
