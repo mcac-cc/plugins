@@ -16,6 +16,12 @@ public class GemListener implements Listener {
         if (event.getInventory().getTitle().contains("§6宝石商店-")) {
             if (event.getWhoClicked() instanceof Player) {
                 event.setCancelled(true);
+                // Security: Prevent using items from player's inventory to trigger shop actions
+                if (event.getClickedInventory() == null ||
+                    !event.getClickedInventory().equals(event.getView().getTopInventory())) {
+                    return;
+                }
+
                 ItemStack icon = event.getCurrentItem();
 
                 if (icon == null || !icon.hasItemMeta()) {
