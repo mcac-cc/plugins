@@ -40,27 +40,48 @@ public class GemExecutorTest {
     }
 
     @Test
-    public void testAddGemsRedundantCall() {
+    public void testAddGemsOptimized() {
         GemExecutor executor = new GemExecutor();
         String playerName = "TestPlayer";
         int amount = 100;
         int currentGems = 50;
         int currentTotal = 1000;
 
-        // Setup mock behavior
-        when(mySQLManager.getGems(playerName)).thenReturn(currentGems);
-        when(mySQLManager.getTotal(playerName)).thenReturn(currentTotal);
+        // Setup mock behavior for the new getData method
+        when(mySQLManager.getData(playerName)).thenReturn(new int[]{currentGems, currentTotal});
 
         // Execute
         executor.addGems(playerName, amount);
 
-        // Verify
-        // Expecting 1 call (the optimized behavior)
-        // This will FAIL on unoptimized code (it calls 2 times)
-        verify(mySQLManager, times(1)).getGems(playerName);
+        // Verify that the new efficient methods are called
+        verify(mySQLManager, times(1)).getData(playerName);
+        verify(mySQLManager, times(1)).updateData(playerName, currentGems + amount, currentTotal + amount);
 
-        verify(mySQLManager, times(1)).getTotal(playerName);
-        verify(mySQLManager, times(1)).setGems(playerName, currentGems + amount);
-        verify(mySQLManager, times(1)).setTotal(playerName, currentTotal + amount);
+        // Verify that the old inefficient methods are NOT called
+        verify(mySQLManager, never()).getGems(playerName);
+        verify(mySQLManager, never()).getTotal(playerName);
+        verify(mySQLManager, never()).setGems(anyString(), anyInt());
+        verify(mySQLManager, never()).setTotal(anyString(), anyInt());
+    }
+
+    @Test
+    public void testTakeGemsOptimized() {
+        GemExecutor executor = new GemExecutor();
+        String playerName = "TestPlayer";
+        int amount = 10;
+
+        // Setup mock behavior for reduceGems
+        when(mySQLManager.reduceGems(playerName, amount)).thenReturn(true);
+
+        // Execute
+        boolean result = executor.takeGems(playerName, amount);
+
+        // Verify
+        assert(result);
+        verify(mySQLManager, times(1)).reduceGems(playerName, amount);
+
+        // Verify old methods not called
+        verify(mySQLManager, never()).getGems(playerName);
+        verify(mySQLManager, never()).setGems(anyString(), anyInt());
     }
 }

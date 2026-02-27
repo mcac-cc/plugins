@@ -24,14 +24,11 @@ public class GemExecutor {
 
 
     public boolean takeGems(String name, int gems) {
-        int currentGems = MySQLManager.getInstance().getGems(name);
-        if (currentGems < gems) {
-            return false;
-        } else {
-            MySQLManager.getInstance().setGems(name, currentGems - gems);
+        if (MySQLManager.getInstance().reduceGems(name, gems)) {
             Gem.getPlugin().log(name + "花费宝石" + gems);
             return true;
         }
+        return false;
     }
 
     public Integer getTotalGems(String name) {
@@ -43,17 +40,14 @@ public class GemExecutor {
     }
 
     public void addGems(String name, int addGems) {
-        Integer gems = MySQLManager.getInstance().getGems(name);
-        // Optimization: Use local variable 'gems' instead of calling getGems again to avoid redundant DB query.
-        if (gems == null) {
+        int[] data = MySQLManager.getInstance().getData(name);
+        if (data == null) {
             MySQLManager.getInstance().insertData(name);
-            gems = 0;
+            data = new int[]{0, 0};
         }
-        Integer total = MySQLManager.getInstance().getTotal(name);
-        gems += addGems;
-        total += addGems;
-        MySQLManager.getInstance().setGems(name, gems);
-        MySQLManager.getInstance().setTotal(name, total);
+        int gems = data[0] + addGems;
+        int total = data[1] + addGems;
+        MySQLManager.getInstance().updateData(name, gems, total);
         Gem.getPlugin().log(name + "获得宝石" + addGems);
     }
 }
