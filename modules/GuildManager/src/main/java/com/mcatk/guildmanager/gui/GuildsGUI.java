@@ -7,8 +7,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -21,7 +23,7 @@ public class GuildsGUI implements Listener {
     private final Inventory gui;
     private ItemStack back;
 
-    private HashMap<ItemStack, GuildGUI> guildGUIMap;
+    private HashMap<ItemStack, Guild> guildMap;
 
     public GuildsGUI() {
         Bukkit.getPluginManager().registerEvents(this, GuildManager.getPlugin());
@@ -34,10 +36,10 @@ public class GuildsGUI implements Listener {
 
     public Inventory getGuildsGui() {
         Inventory gui = Bukkit.createInventory(null, 54, "§6公会列表");
-        guildGUIMap = new HashMap<>();
+        guildMap = new HashMap<>();
         for (Guild guild : GuildManager.getPlugin().getGuildService().getGuilds().values()) {
             ItemStack button = getAnGuildButton(guild);
-            guildGUIMap.put(button, new GuildGUI(guild));
+            guildMap.put(button, guild);
             gui.addItem(button);
         }
         gui.setItem(53, back = getQuitIcon());
@@ -84,9 +86,17 @@ public class GuildsGUI implements Listener {
             ((Player) e.getWhoClicked()).chat("/menu");
             return;
         }
-        GuildGUI guildGUI = guildGUIMap.get(clickedItem);
-        guildGUI.openGUI((Player) e.getWhoClicked());
+        Guild guild = guildMap.get(clickedItem);
+        if (guild != null) {
+            new GuildGUI(guild).openGUI((Player) e.getWhoClicked());
+        }
     }
 
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent e) {
+        if (e.getInventory().equals(gui)) {
+            HandlerList.unregisterAll(this);
+        }
+    }
 
 }
