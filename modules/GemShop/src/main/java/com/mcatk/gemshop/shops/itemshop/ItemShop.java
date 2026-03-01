@@ -28,20 +28,18 @@ public class ItemShop {
 //        new BukkitRunnable() {
 //            @Override
 //            public void run() {
-                if (itemsMap.get(shopId) == null) {
+                Items items = itemsMap.get(shopId);
+                if (items == null) {
                     player.sendMessage(Message.ERROR + "无该分类");
+                    return;
                 }
-                if (!itemsMap.get(shopId).getMap().containsKey(itemId)) {
+                Item item = items.getMap().get(itemId);
+                if (item == null) {
                     player.sendMessage(Message.ERROR + "无该商品");
-                } else if (
-                        Gem.getPlugin().getGemExecutor().takeGems(
-                                player.getName(),
-                                itemsMap.get(shopId).getMap().get(itemId).getPrice()
-                        )
-                ) {
-                    player.getInventory().addItem(
-                            itemsMap.get(shopId).getMap().get(itemId).getItemStack()
-                    );
+                    return;
+                }
+                if (Gem.getPlugin().getGemExecutor().takeGems(player.getName(), item.getPrice())) {
+                    player.getInventory().addItem(item.getItemStack());
                     player.sendMessage(Message.INFO + "购买成功");
                 } else {
                     player.sendMessage(Message.INFO + "宝石不足");
@@ -63,7 +61,11 @@ public class ItemShop {
     }
     
     public void delItem(String shopId, String itemId) {
-        itemsMap.get(shopId).getMap().remove(itemId);
+        Items items = itemsMap.get(shopId);
+        if (items == null) {
+            return;
+        }
+        items.getMap().remove(itemId);
         GemShop.getPlugin().getConfig().set("Items." + shopId + "." + itemId, null);
         GemShop.getPlugin().saveConfig();
     }
