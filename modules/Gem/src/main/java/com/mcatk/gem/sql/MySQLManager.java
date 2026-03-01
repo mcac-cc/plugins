@@ -117,4 +117,46 @@ public class MySQLManager {
         }
     }
 
+    public boolean reduceGems(String name, int amount) {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "UPDATE `gem` SET `gems` = `gems` - ? WHERE `username` = ? AND `gems` >= ?"
+        )) {
+            ps.setInt(1, amount);
+            ps.setString(2, name);
+            ps.setInt(3, amount);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public int[] getData(String name) {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT `gems`, `total` FROM `gem` WHERE `username` = ?"
+        )) {
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return new int[]{rs.getInt("gems"), rs.getInt("total")};
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void updateData(String name, int gems, int total) {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "UPDATE `gem` SET `gems` = ?, `total` = ? WHERE `username` = ?"
+        )) {
+            ps.setInt(1, gems);
+            ps.setInt(2, total);
+            ps.setString(3, name);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
