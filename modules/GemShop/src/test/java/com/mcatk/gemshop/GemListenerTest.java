@@ -2,7 +2,6 @@ package com.mcatk.gemshop;
 
 import com.mcatk.gemshop.shops.ShopFactory;
 import com.mcatk.gemshop.shops.itemshop.ItemShop;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
@@ -46,8 +45,6 @@ public class GemListenerTest {
     @Test
     public void testOnInventoryClick_InPlayerInventory() {
         try (MockedStatic<GemShop> gemShopStatic = Mockito.mockStatic(GemShop.class)) {
-            // These mock setups are "unnecessary" because the code returns early due to the new check!
-            // But we can use lenient() to avoid the exception.
             gemShopStatic.when(GemShop::getPlugin).thenReturn(gemShop);
 
             // Mock event setup
@@ -68,8 +65,9 @@ public class GemListenerTest {
             // Execute
             gemListener.onInventoryClick(event);
 
-            // Verify: buyItem should NOT be called because the click was in the player's inventory
-             verify(itemShop, never()).buyItem(any(), any(), any());
+            // Verify: clicks in player inventory are ignored before any item/lore processing.
+            verify(event, never()).getCurrentItem();
+            verify(itemShop, never()).buyItem(any(), any(), any());
         }
     }
 
