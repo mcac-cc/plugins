@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 public class GemExecutorTest {
@@ -56,12 +57,28 @@ public class GemExecutorTest {
         // Verify that the new efficient methods are called
         verify(mySQLManager, times(1)).getData(playerName);
         verify(mySQLManager, times(1)).updateData(playerName, currentGems + amount, currentTotal + amount);
+        verify(mySQLManager, never()).insertData(playerName);
 
         // Verify that the old inefficient methods are NOT called
         verify(mySQLManager, never()).getGems(playerName);
         verify(mySQLManager, never()).getTotal(playerName);
         verify(mySQLManager, never()).setGems(anyString(), anyInt());
         verify(mySQLManager, never()).setTotal(anyString(), anyInt());
+    }
+
+    @Test
+    public void testAddGemsWhenDataMissing() {
+        GemExecutor executor = new GemExecutor();
+        String playerName = "TestPlayer";
+        int amount = 20;
+
+        when(mySQLManager.getData(playerName)).thenReturn(null, new int[]{5, 10});
+
+        executor.addGems(playerName, amount);
+
+        verify(mySQLManager, times(2)).getData(playerName);
+        verify(mySQLManager, times(1)).insertData(playerName);
+        verify(mySQLManager, times(1)).updateData(playerName, 25, 30);
     }
 
     @Test
@@ -77,7 +94,7 @@ public class GemExecutorTest {
         boolean result = executor.takeGems(playerName, amount);
 
         // Verify
-        assert(result);
+        assertTrue(result);
         verify(mySQLManager, times(1)).reduceGems(playerName, amount);
 
         // Verify old methods not called

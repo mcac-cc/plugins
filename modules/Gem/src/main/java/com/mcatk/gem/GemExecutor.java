@@ -43,7 +43,10 @@ public class GemExecutor {
         int[] data = MySQLManager.getInstance().getData(name);
         if (data == null) {
             MySQLManager.getInstance().insertData(name);
-            data = new int[]{0, 0};
+            data = MySQLManager.getInstance().getData(name);
+            if (data == null) {
+                data = new int[]{0, 0};
+            }
         }
         int gems = data[0] + addGems;
         int total = data[1] + addGems;
