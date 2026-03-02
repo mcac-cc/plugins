@@ -56,7 +56,7 @@ public class ItemShop {
         }
         itemsMap.get(shopId).getMap().put(itemId, item);
         GemShop.getPlugin().getConfig().set("Items." + shopId + "." + itemId, item);
-        GemShop.getPlugin().saveConfig();
+        GemShop.getPlugin().saveConfigAsync();
         player.sendMessage(Message.INFO + "添加成功：" + itemId + " " + price + "宝石");
     }
     
@@ -67,7 +67,7 @@ public class ItemShop {
         }
         items.getMap().remove(itemId);
         GemShop.getPlugin().getConfig().set("Items." + shopId + "." + itemId, null);
-        GemShop.getPlugin().saveConfig();
+        GemShop.getPlugin().saveConfigAsync();
     }
     
     public Items getItems(String shopId) {
