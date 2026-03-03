@@ -1,3 +1,3 @@
-## 2026-02-26 - [Redundant DB Query in GemExecutor]
-**Learning:** Found a redundant database query in `GemExecutor.addGems` where `MySQLManager.getInstance().getGems(name)` was called twice, resulting in an extra SELECT query per gem addition.
-**Action:** Removed the redundant call by using the local variable `gems` which already held the result. This optimization saves one database roundtrip per call.
+## 2024-03-03 - O(N) Main Thread Database Read on Entity Updates (GuildService)
+**Learning:** `refresh()` methods in single-threaded components (like Spigot plugins) that hit the DB sequentially for O(N) rows can cause severe main-thread lag when invoked on frequent events (like saving user stats).
+**Action:** Replace `refresh()` calls with precise, O(1) in-memory cache updates (e.g., `map.put(id, entity)`) inside `saveEntity()` operations to maintain coherence without hitting the database.

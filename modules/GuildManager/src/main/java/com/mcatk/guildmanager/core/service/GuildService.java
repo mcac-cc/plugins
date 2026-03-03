@@ -44,7 +44,8 @@ public class GuildService {
 
     public synchronized void saveGuild(Guild guild) {
         repository.updateGuild(guild);
-        refresh();
+        // Bolt: Update cache directly to avoid O(N) database reads from refresh()
+        guilds.put(guild.getId(), guild);
     }
 
     public synchronized Member getMember(String playerId) {
@@ -53,7 +54,18 @@ public class GuildService {
 
     public synchronized void saveMember(Member member) {
         repository.updateMember(member);
-        refresh();
+        // Bolt: Update member in cache directly instead of calling refresh().
+        // This prevents an N+1 query bottleneck on frequent operations like donations.
+        Guild guild = guilds.get(member.getGuildID());
+        if (guild != null) {
+            ArrayList<Member> members = guild.getMembers();
+            for (int i = 0; i < members.size(); i++) {
+                if (members.get(i).getId().equals(member.getId())) {
+                    members.set(i, member);
+                    break;
+                }
+            }
+        }
     }
 
     public synchronized void addMember(String playerId, String guildId) {
