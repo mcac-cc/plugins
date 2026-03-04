@@ -20,9 +20,16 @@ public class GuildService {
         guilds = repository.getAllGuilds();
     }
 
+    // ⚡ Bolt: Instead of refreshing the entire cache from the database (O(N) operation),
+    // we fetch only the modified entity and update the map directly to improve performance.
     public synchronized void createGuild(String id, String chairman) {
         repository.createGuild(id, chairman);
-        refresh();
+        Guild guild = repository.getGuild(id);
+        if (guild != null) {
+            guilds.put(id, guild);
+        } else {
+            refresh();
+        }
     }
 
     public synchronized Guild getPlayerGuild(String playerId) {
@@ -42,28 +49,56 @@ public class GuildService {
         return guilds.get(guildId);
     }
 
+    // ⚡ Bolt: Instead of refreshing the entire cache from the database (O(N) operation),
+    // we fetch only the modified entity and update the map directly to improve performance.
     public synchronized void saveGuild(Guild guild) {
         repository.updateGuild(guild);
-        refresh();
+        Guild updatedGuild = repository.getGuild(guild.getId());
+        if (updatedGuild != null) {
+            guilds.put(guild.getId(), updatedGuild);
+        } else {
+            refresh();
+        }
     }
 
     public synchronized Member getMember(String playerId) {
         return repository.getMember(playerId);
     }
 
+    // ⚡ Bolt: Instead of refreshing the entire cache from the database (O(N) operation),
+    // we fetch only the modified entity and update the map directly to improve performance.
     public synchronized void saveMember(Member member) {
         repository.updateMember(member);
-        refresh();
+        Guild updatedGuild = repository.getGuild(member.getGuildID());
+        if (updatedGuild != null) {
+            guilds.put(member.getGuildID(), updatedGuild);
+        } else {
+            refresh();
+        }
     }
 
+    // ⚡ Bolt: Instead of refreshing the entire cache from the database (O(N) operation),
+    // we fetch only the modified entity and update the map directly to improve performance.
     public synchronized void addMember(String playerId, String guildId) {
         repository.addMember(playerId, guildId);
-        refresh();
+        Guild updatedGuild = repository.getGuild(guildId);
+        if (updatedGuild != null) {
+            guilds.put(guildId, updatedGuild);
+        } else {
+            refresh();
+        }
     }
 
+    // ⚡ Bolt: Instead of refreshing the entire cache from the database (O(N) operation),
+    // we fetch only the modified entity and update the map directly to improve performance.
     public synchronized void removeMember(String playerId, String guildId) {
         repository.removeMember(playerId, guildId);
-        refresh();
+        Guild updatedGuild = repository.getGuild(guildId);
+        if (updatedGuild != null) {
+            guilds.put(guildId, updatedGuild);
+        } else {
+            refresh();
+        }
     }
 
     public synchronized ArrayList<String> getGuildMembers(String guildId) {
