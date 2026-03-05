@@ -41,11 +41,8 @@ public class WhiteList implements Listener {
 
     public void on() {
         Connection connection = plugin.getSqlManager().getConnection();
-        try {
-            PreparedStatement ps = connection.prepareStatement(
-                    "SELECT * FROM `whitelist`"
-            );
-            ResultSet rs = ps.executeQuery();
+        try (PreparedStatement ps = connection.prepareStatement("SELECT * FROM `whitelist`");
+             ResultSet rs = ps.executeQuery()) {
             whiteList.clear();
             while (rs.next()) {
                 whiteList.add(rs.getString("player_name"));
@@ -62,10 +59,8 @@ public class WhiteList implements Listener {
     public void addPlayer(String playerName) {
         whiteList.add(playerName);
         Connection connection = plugin.getSqlManager().getConnection();
-        try {
-            PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO `whitelist` (`player_name`) VALUES (?) ON DUPLICATE KEY UPDATE `player_name` = ?"
-            );
+        try (PreparedStatement ps = connection.prepareStatement(
+                "INSERT INTO `whitelist` (`player_name`) VALUES (?) ON DUPLICATE KEY UPDATE `player_name` = ?")) {
             ps.setString(1, playerName);
             ps.setString(2, playerName);
             ps.executeUpdate();

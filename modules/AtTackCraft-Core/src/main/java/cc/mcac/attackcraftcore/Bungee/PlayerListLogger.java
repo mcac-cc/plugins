@@ -18,18 +18,18 @@ public class PlayerListLogger {
         plugin.getProxy().getScheduler().schedule(plugin, () -> {
             try {
                 Connection connection = plugin.getSqlManager().getConnection();
-                PreparedStatement ps = connection.prepareStatement(
+                try (PreparedStatement ps = connection.prepareStatement(
                         "INSERT INTO `server_player_list` (server_id, player_number, player_list) VALUES (?,?,?) " +
-                                "ON DUPLICATE KEY UPDATE player_number = ?, player_list = ?"
-                );
-                int playerNumber = plugin.getProxy().getOnlineCount();
-                String playerList = plugin.getProxy().getPlayers().toString();
-                ps.setString(1, plugin.getConfiguration().getString("server_id"));
-                ps.setInt(2, playerNumber);
-                ps.setString(3, playerList);
-                ps.setInt(4, playerNumber);
-                ps.setString(5, playerList);
-                ps.executeUpdate();
+                                "ON DUPLICATE KEY UPDATE player_number = ?, player_list = ?")) {
+                    int playerNumber = plugin.getProxy().getOnlineCount();
+                    String playerList = plugin.getProxy().getPlayers().toString();
+                    ps.setString(1, plugin.getConfiguration().getString("server_id"));
+                    ps.setInt(2, playerNumber);
+                    ps.setString(3, playerList);
+                    ps.setInt(4, playerNumber);
+                    ps.setString(5, playerList);
+                    ps.executeUpdate();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
