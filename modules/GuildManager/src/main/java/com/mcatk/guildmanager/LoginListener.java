@@ -22,8 +22,12 @@ public class LoginListener implements Listener {
                 );
             } else {
                 // 非会长 会内公告
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId()).contains(p.getName())) {
+                // Optimize player notifications in LoginListener
+                // Iterates over specific member list and uses Bukkit.getPlayerExact to check online status (O(M))
+                // rather than iterating over all online players and searching the member list each time (O(N))
+                for (String memberName : GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId())) {
+                    Player p = Bukkit.getPlayerExact(memberName);
+                    if (p != null && p.isOnline()) {
                         p.sendMessage(
                                 Msg.INFO + "§6" + guild.getGuildName() + " §7成员 §e" + player.getName() + " §7已上线"
                         );
