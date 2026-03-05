@@ -1,0 +1,3 @@
+## 2024-03-05 - Safe Tooltips in Custom Spigot GUIs
+**Learning:** Adding instructional lore (tooltips) to utility items (like 'Return' buttons) in custom Spigot GUIs can cause bugs if event listeners indiscriminately parse the lore of all clicked items for context-sensitive data. This leads to `ArrayIndexOutOfBoundsException`s when the utility item's lore is formatted differently than a normal shop item's lore.
+**Action:** Always ensure event listeners explicitly intercept utility items by name (e.g., `getDisplayName().endsWith("返回")`) and return early *before* attempting to parse item lore for data like IDs.
