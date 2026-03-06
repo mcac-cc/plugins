@@ -53,12 +53,8 @@ public class GuildService {
     // we fetch only the modified entity and update the map directly to improve performance.
     public synchronized void saveGuild(Guild guild) {
         repository.updateGuild(guild);
-        Guild updatedGuild = repository.getGuild(guild.getId());
-        if (updatedGuild != null) {
-            guilds.put(guild.getId(), updatedGuild);
-        } else {
-            refresh();
-        }
+        // ⚡ Bolt: Update cache directly to avoid an O(N) refresh or extra DB read.
+        guilds.put(guild.getId(), guild);
     }
 
     public synchronized Member getMember(String playerId) {
@@ -69,11 +65,17 @@ public class GuildService {
     // we fetch only the modified entity and update the map directly to improve performance.
     public synchronized void saveMember(Member member) {
         repository.updateMember(member);
-        Guild updatedGuild = repository.getGuild(member.getGuildID());
-        if (updatedGuild != null) {
-            guilds.put(member.getGuildID(), updatedGuild);
-        } else {
-            refresh();
+        // ⚡ Bolt: Update member in cache directly instead of refreshing/fetching from DB.
+        // This prevents an N+1 query bottleneck on frequent operations like donations.
+        Guild guild = guilds.get(member.getGuildID());
+        if (guild != null) {
+            ArrayList<Member> members = guild.getMembers();
+            for (int i = 0; i < members.size(); i++) {
+                if (members.get(i).getId().equals(member.getId())) {
+                    members.set(i, member);
+                    break;
+                }
+            }
         }
     }
 
