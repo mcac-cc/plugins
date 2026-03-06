@@ -16,18 +16,19 @@ public class ShopListener implements Listener {
             if (event.getWhoClicked() instanceof Player) {
                 ItemStack icon = event.getCurrentItem();
                 event.setCancelled(true);
-                if (icon != null) {
+                if (icon != null && icon.hasItemMeta()) {
+                    if (icon.getItemMeta().hasDisplayName()) {
+                        if (icon.getItemMeta().getDisplayName().endsWith("返回")) {
+                            ((Player) event.getWhoClicked()).chat("/menu_shop");
+                            return;
+                        }
+                    }
                     List<String> list = icon.getItemMeta().getLore();
-                    if (list != null) {
+                    if (list != null && !list.isEmpty()) {
                         String shopId = event.getInventory().getTitle().split("-")[1];
                         String itemId = list.get(0).split(":")[1];
                         Item item = AcShop.getShops().getItem(shopId, itemId);
                         new Operation().buy((Player) event.getWhoClicked(), item);
-                    }
-                    if (icon.getItemMeta().getDisplayName() != null) {
-                        if (icon.getItemMeta().getDisplayName().equals("返回")) {
-                            ((Player) event.getWhoClicked()).chat("/menu_shop");
-                        }
                     }
                 }
             }
