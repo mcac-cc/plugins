@@ -24,15 +24,15 @@ public class LoginListener implements Listener {
                 );
             } else {
                 // 非会长 会内公告
-                // ⚡ Bolt: Fetch guild members once instead of inside a loop over all online players.
-                // Iterating over guild members (O(M)) and using getPlayerExact (O(1)) is much faster
-                // than iterating over all online players (O(N)) and calling getGuildMembers() every time.
+                // ⚡ Bolt: Iterate over guild members directly instead of all online players to reduce complexity from O(N*M) to O(M)
                 List<String> members = GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId());
                 String message = Msg.INFO + "§6" + guild.getGuildName() + " §7成员 §e" + player.getName() + " §7已上线";
                 for (String memberName : members) {
                     Player p = Bukkit.getPlayerExact(memberName);
-                    if (p != null && p.isOnline()) {
+                    if (p != null) {
                         p.sendMessage(message);
+                    }
+                }
                     }
                 }
             }

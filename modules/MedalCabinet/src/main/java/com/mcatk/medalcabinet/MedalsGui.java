@@ -37,7 +37,10 @@ public class MedalsGui implements Listener {
         // back button
         back = new ItemStack(Material.GOLD_NUGGET);
         ItemMeta meta = back.getItemMeta();
-        meta.setDisplayName("返回");
+        meta.setDisplayName("\u00a7e返回");
+        ArrayList<String> lore = new ArrayList<>();
+        lore.add("\u00a77点击返回主菜单");
+        meta.setLore(lore);
         back.setItemMeta(meta);
         gui.setItem(53, back);
     }
@@ -63,13 +66,19 @@ public class MedalsGui implements Listener {
         e.setCancelled(true);
         ItemStack clickedItem = e.getCurrentItem();
         if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
-        if (clickedItem.equals(back)) {
+
+        if (clickedItem.hasItemMeta() &&
+            clickedItem.getItemMeta().hasDisplayName() &&
+            clickedItem.getItemMeta().getDisplayName().endsWith("返回")) {
             ((Player) e.getWhoClicked()).chat("/menu");
             return;
         }
+
         Medal medal = iconMap.get(clickedItem);
-        SQLManager.getInstance().setMainMedal(e.getWhoClicked().getName(), medal.getId());
-        e.getWhoClicked().sendMessage("§e已将勋章 " + medal.getName() + " §e设为主勋章");
+        if (medal != null) {
+            SQLManager.getInstance().setMainMedal(e.getWhoClicked().getName(), medal.getId());
+            e.getWhoClicked().sendMessage("§e已将勋章 " + medal.getName() + " §e设为主勋章");
+        }
     }
 
 
