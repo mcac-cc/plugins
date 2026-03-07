@@ -29,11 +29,25 @@ modules/
 
 ## 构建与使用
 
-每个插件为独立 Maven 工程：
+每个插件为独立 Maven 工程（其中 **Acore 同时提供 Gradle 构建**）：
+
+### 单个模块构建
 
 1. 进入对应模块目录
 2. 执行 `mvn package`
 3. 将产物放入服务器 `plugins/`
+
+### 一键构建全部模块（推荐）
+
+仓库提供脚本：
+
+```bash
+./scripts/build-all.sh
+# 或跳过测试（如果你只想快速出包）
+./scripts/build-all.sh --skip-tests
+```
+
+该脚本会优先使用本机 Maven；若本机未安装 Maven，则会自动尝试使用 Docker 的 Maven 镜像进行构建。
 
 具体指令与配置请查看各模块内的 `README.md` 与 `plugin.yml`。
 
