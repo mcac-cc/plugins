@@ -7,6 +7,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.util.List;
+
 public class LoginListener implements Listener {
 
     @EventHandler
@@ -23,12 +25,14 @@ public class LoginListener implements Listener {
             } else {
                 // 非会长 会内公告
                 // ⚡ Bolt: Iterate over guild members directly instead of all online players to reduce complexity from O(N*M) to O(M)
-                for (String memberName : GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId())) {
+                List<String> members = GuildManager.getPlugin().getGuildService().getGuildMembers(guild.getId());
+                String message = Msg.INFO + "§6" + guild.getGuildName() + " §7成员 §e" + player.getName() + " §7已上线";
+                for (String memberName : members) {
                     Player p = Bukkit.getPlayerExact(memberName);
                     if (p != null) {
-                        p.sendMessage(
-                                Msg.INFO + "§6" + guild.getGuildName() + " §7成员 §e" + player.getName() + " §7已上线"
-                        );
+                        p.sendMessage(message);
+                    }
+                }
                     }
                 }
             }
