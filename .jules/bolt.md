@@ -1,3 +1,3 @@
-## 2026-02-26 - [Redundant DB Query in GemExecutor]
-**Learning:** Found a redundant database query in `GemExecutor.addGems` where `MySQLManager.getInstance().getGems(name)` was called twice, resulting in an extra SELECT query per gem addition.
-**Action:** Removed the redundant call by using the local variable `gems` which already held the result. This optimization saves one database roundtrip per call.
+## 2024-05-15 - [Async Config Saving in Spigot]
+**Learning:** In Spigot plugin development, saving YAML configurations to disk using `saveConfig()` is a synchronous operation that blocks the main server thread, potentially causing lag spikes. A highly effective optimization is to serialize the configuration to a string synchronously using `getConfig().saveToString()`, and then write that string to disk asynchronously via an `ExecutorService` or `BukkitRunnable`.
+**Action:** When working on Bukkit/Spigot plugins, use an asynchronous write method for configuration saves, especially in performance-sensitive areas or when config changes are frequent (e.g. on every item transaction).
