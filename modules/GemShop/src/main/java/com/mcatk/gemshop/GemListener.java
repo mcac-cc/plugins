@@ -30,7 +30,7 @@ public class GemListener implements Listener {
 
                 ItemMeta meta = icon.getItemMeta();
 
-                if (meta.hasDisplayName() && meta.getDisplayName().equals("返回")){
+                if (meta.hasDisplayName() && meta.getDisplayName().endsWith("返回")){
                     ((Player) event.getWhoClicked()).chat("/gemshop");
                     return;
                 }
