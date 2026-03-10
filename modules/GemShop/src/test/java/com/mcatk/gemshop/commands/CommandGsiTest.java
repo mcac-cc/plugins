@@ -85,4 +85,32 @@ public class CommandGsiTest {
         assertTrue(result);
         verify(itemShop).addItem(sender, "shop", "item", "10");
     }
+
+    @Test
+    public void testAddRejectsNonNumericPrice() {
+        Player sender = mock(Player.class);
+        when(sender.isOp()).thenReturn(true);
+
+        boolean result = commandGsi.onCommand(
+                sender, mock(Command.class), "gsi", new String[]{"add", "shop", "item", "abc"}
+        );
+
+        assertTrue(result);
+        verify(sender).sendMessage(contains("价格必须为正整数"));
+        gemShopStatic.verifyNoInteractions();
+    }
+
+    @Test
+    public void testAddRejectsNonPositivePrice() {
+        Player sender = mock(Player.class);
+        when(sender.isOp()).thenReturn(true);
+
+        boolean result = commandGsi.onCommand(
+                sender, mock(Command.class), "gsi", new String[]{"add", "shop", "item", "0"}
+        );
+
+        assertTrue(result);
+        verify(sender).sendMessage(contains("价格必须为正整数"));
+        gemShopStatic.verifyNoInteractions();
+    }
 }

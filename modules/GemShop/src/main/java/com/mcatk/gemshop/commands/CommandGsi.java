@@ -8,6 +8,8 @@ import org.bukkit.entity.Player;
 
 public class CommandGsi implements CommandExecutor {
 
+    private static final String INVALID_PRICE_MESSAGE = "价格必须为正整数";
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.isOp()) {
@@ -27,6 +29,10 @@ public class CommandGsi implements CommandExecutor {
                 }
                 if (!(sender instanceof Player)) {
                     sender.sendMessage("该命令仅玩家可执行");
+                    return true;
+                }
+                if (!isPositiveInteger(args[3])) {
+                    sender.sendMessage(INVALID_PRICE_MESSAGE);
                     return true;
                 }
                 GemShop.getPlugin().getShopFactory().getItemShop()
@@ -50,6 +56,14 @@ public class CommandGsi implements CommandExecutor {
             default:
                 printHelp(sender);
                 return true;
+        }
+    }
+
+    private boolean isPositiveInteger(String rawPrice) {
+        try {
+            return Integer.parseInt(rawPrice) > 0;
+        } catch (NumberFormatException ignored) {
+            return false;
         }
     }
 
