@@ -38,6 +38,10 @@ public class GuildsGUI implements Listener {
         Inventory gui = Bukkit.createInventory(null, 54, "§6公会列表");
         guildMap = new HashMap<>();
         for (Guild guild : GuildManager.getPlugin().getGuildService().getGuilds().values()) {
+            int nextSlot = gui.firstEmpty();
+            if (nextSlot == -1 || nextSlot >= 53) {
+                break;
+            }
             ItemStack button = getAnGuildButton(guild);
             guildMap.put(button, guild);
             gui.addItem(button);
