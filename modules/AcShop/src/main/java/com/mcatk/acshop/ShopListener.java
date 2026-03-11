@@ -14,18 +14,29 @@ public class ShopListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getTitle().contains("§6AC商店-")) {
             if (event.getWhoClicked() instanceof Player) {
-                ItemStack icon = event.getCurrentItem();
                 event.setCancelled(true);
-                if (icon != null && icon.hasItemMeta()) {
-                    if (icon.getItemMeta().hasDisplayName() &&
-                        icon.getItemMeta().getDisplayName().endsWith("返回")) {
-                        ((Player) event.getWhoClicked()).chat("/menu_shop");
-                        return;
-                    }
+                // Security: prevent using items from the player's own inventory to trigger shop actions.
+                if (event.getClickedInventory() == null ||
+                    !event.getClickedInventory().equals(event.getView().getTopInventory())) {
+                    return;
+                }
 
-                    List<String> list = icon.getItemMeta().getLore();
-                    if (list != null && !list.isEmpty()) {
-                        String shopId = event.getInventory().getTitle().split("-")[1];
+                ItemStack icon = event.getCurrentItem();
+                if (icon == null || !icon.hasItemMeta()) {
+                    return;
+                }
+
+                if (icon.getItemMeta().hasDisplayName() &&
+                    icon.getItemMeta().getDisplayName().endsWith("返回")) {
+                    ((Player) event.getWhoClicked()).chat("/menu_shop");
+                    return;
+                }
+
+                List<String> list = icon.getItemMeta().getLore();
+                if (list != null && !list.isEmpty()) {
+                    String[] titleParts = event.getInventory().getTitle().split("-");
+                    if (titleParts.length > 1) {
+                        String shopId = titleParts[1];
                         String[] loreParts = list.get(0).split(":");
                         if (loreParts.length > 1) {
                             String itemId = loreParts[1];
