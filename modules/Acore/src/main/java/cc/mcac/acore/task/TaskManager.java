@@ -20,13 +20,23 @@ public class TaskManager {
     
     public void startAllTasks() {
         PluginConfig config = plugin.getPluginConfig();
-        
-        // Start player list task
+
+        if (config.playerListToDbInterval <= 0) {
+            logger.warn("Skipping player list task because player-list-to-db-interval is invalid: {}", config.playerListToDbInterval);
+            return;
+        }
+
+        String serverId = config.serverId == null ? "" : config.serverId.trim();
+        if (serverId.isEmpty()) {
+            logger.warn("Skipping player list task because server-id is blank");
+            return;
+        }
+
         playerListTask = plugin.getServer().getScheduler()
                 .buildTask(plugin, new PlayerListTask(plugin))
                 .repeat(config.playerListToDbInterval, TimeUnit.SECONDS)
                 .schedule();
-        
+
         logger.info("Scheduled tasks started (player list interval: {}s)", config.playerListToDbInterval);
     }
     

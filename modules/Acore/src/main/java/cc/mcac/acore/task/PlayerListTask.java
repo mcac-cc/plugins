@@ -15,7 +15,7 @@ public class PlayerListTask implements Runnable {
 
     @Override
     public void run() {
-        String serverId = acore.getPluginConfig().serverId;
+        String serverId = acore.getPluginConfig().serverId.trim();
         int playerCount = acore.getServer().getPlayerCount();
         String playerList = acore.getServer().getAllPlayers().stream()
                 .map(Player::getUsername)
