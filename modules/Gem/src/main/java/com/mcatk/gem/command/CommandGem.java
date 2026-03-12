@@ -9,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class CommandGem implements CommandExecutor {
+    private static final String POSITIVE_AMOUNT_ERROR = "宝石数量必须大于 0";
     private CommandSender sender;
     private String[] args;
 
@@ -65,10 +66,13 @@ public class CommandGem implements CommandExecutor {
             sendParameterError();
         } else {
             try {
-                Gem.getPlugin().getGemExecutor().setGems(args[1], Integer.parseInt(args[2]));
-                sender.sendMessage(Message.INFO + args[1] + " 的宝石设置为： " + args[2]);
+                int amount = parsePositiveAmount(args[2]);
+                Gem.getPlugin().getGemExecutor().setGems(args[1], amount);
+                sender.sendMessage(Message.INFO + args[1] + " 的宝石设置为： " + amount);
             } catch (NumberFormatException e) {
                 sender.sendMessage(Message.ERROR + "宝石必须是整数");
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(Message.ERROR + POSITIVE_AMOUNT_ERROR);
             }
         }
     }
@@ -96,7 +100,7 @@ public class CommandGem implements CommandExecutor {
             sendParameterError();
         } else {
             try {
-                int gems = Integer.parseInt(args[2]);
+                int gems = parsePositiveAmount(args[2]);
                 if (Gem.getPlugin().getGemExecutor().takeGems(args[1], gems)) {
                     sender.sendMessage(Message.INFO + args[1] + " 减少 " + gems + " 宝石");
                 } else {
@@ -104,6 +108,8 @@ public class CommandGem implements CommandExecutor {
                 }
             } catch (NumberFormatException e) {
                 sender.sendMessage(Message.ERROR + "宝石必须是整数");
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(Message.ERROR + POSITIVE_AMOUNT_ERROR);
             }
         }
     }
@@ -113,7 +119,7 @@ public class CommandGem implements CommandExecutor {
             sendParameterError();
         } else {
             try {
-                int addGems = Integer.parseInt(args[2]);
+                int addGems = parsePositiveAmount(args[2]);
                 Gem.getPlugin().getGemExecutor().addGems(args[1], addGems);
                 int gems = Gem.getPlugin().getGemExecutor().getGems(args[1]);
                 sender.sendMessage(Message.INFO + args[1] +
@@ -123,8 +129,18 @@ public class CommandGem implements CommandExecutor {
                 }
             } catch (NumberFormatException e) {
                 sender.sendMessage(Message.ERROR + "宝石必须是整数");
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(Message.ERROR + POSITIVE_AMOUNT_ERROR);
             }
         }
+    }
+
+    private int parsePositiveAmount(String value) {
+        int amount = Integer.parseInt(value);
+        if (amount <= 0) {
+            throw new IllegalArgumentException(POSITIVE_AMOUNT_ERROR);
+        }
+        return amount;
     }
 
     private void sendParameterError() {
@@ -132,5 +148,4 @@ public class CommandGem implements CommandExecutor {
     }
 
 }
-
 

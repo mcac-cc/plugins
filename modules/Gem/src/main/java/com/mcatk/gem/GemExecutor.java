@@ -5,6 +5,11 @@ import com.mcatk.gem.sql.MySQLManager;
 import java.sql.SQLException;
 
 public class GemExecutor {
+    private static void requirePositiveAmount(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("gems must be positive");
+        }
+    }
 
     public Integer getGems(String name) {
         Integer gems = MySQLManager.getInstance().getGems(name);
@@ -15,6 +20,7 @@ public class GemExecutor {
     }
 
     public void setGems(String name, int gems) {
+        requirePositiveAmount(gems);
         if (MySQLManager.getInstance().getGems(name) == null) {
             MySQLManager.getInstance().insertData(name);
         }
@@ -24,6 +30,9 @@ public class GemExecutor {
 
 
     public boolean takeGems(String name, int gems) {
+        if (gems <= 0) {
+            return false;
+        }
         if (MySQLManager.getInstance().reduceGems(name, gems)) {
             Gem.getPlugin().log(name + "花费宝石" + gems);
             return true;
@@ -40,6 +49,7 @@ public class GemExecutor {
     }
 
     public void addGems(String name, int addGems) {
+        requirePositiveAmount(addGems);
         int[] data = MySQLManager.getInstance().getData(name);
         if (data == null) {
             MySQLManager.getInstance().insertData(name);

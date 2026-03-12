@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -100,5 +101,28 @@ public class GemExecutorTest {
         // Verify old methods not called
         verify(mySQLManager, never()).getGems(playerName);
         verify(mySQLManager, never()).setGems(anyString(), anyInt());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddGemsRejectsNonPositiveAmounts() {
+        GemExecutor executor = new GemExecutor();
+
+        executor.addGems("TestPlayer", 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetGemsRejectsNonPositiveAmounts() {
+        GemExecutor executor = new GemExecutor();
+
+        executor.setGems("TestPlayer", -1);
+    }
+
+    @Test
+    public void testTakeGemsRejectsNonPositiveAmounts() {
+        GemExecutor executor = new GemExecutor();
+
+        assertFalse(executor.takeGems("TestPlayer", 0));
+        assertFalse(executor.takeGems("TestPlayer", -5));
+        verify(mySQLManager, never()).reduceGems(anyString(), anyInt());
     }
 }
