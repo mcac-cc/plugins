@@ -15,6 +15,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class MedalsGui implements Listener {
 
@@ -50,7 +51,8 @@ public class MedalsGui implements Listener {
     }
 
     private ItemStack getIcon(Medal medal) {
-        ItemStack icon = new ItemStack(Material.getMaterial(medal.getMaterial()), 1);
+        Material material = resolveMaterial(medal);
+        ItemStack icon = new ItemStack(material, 1);
         ItemMeta meta = icon.getItemMeta();
         meta.setDisplayName(medal.getName());
         ArrayList<String> lore = new ArrayList<>(Arrays.asList(medal.getDescriptions().split("\n")));
@@ -58,6 +60,19 @@ public class MedalsGui implements Listener {
         meta.setLore(lore);
         icon.setItemMeta(meta);
         return icon;
+    }
+
+    private Material resolveMaterial(Medal medal) {
+        String materialName = medal.getMaterial();
+        Material material = materialName == null ? null : Material.getMaterial(materialName.toUpperCase(Locale.ROOT));
+        if (material != null) {
+            return material;
+        }
+
+        MedalCabinet.getPlugin().getLogger().warning(
+                "Invalid material '" + materialName + "' for medal " + medal.getId() + ", falling back to PAPER"
+        );
+        return Material.PAPER;
     }
 
     @EventHandler

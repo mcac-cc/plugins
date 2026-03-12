@@ -23,15 +23,19 @@ public class MedalPapi extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
-        if (identifier.equals("show")) {
-            Medal medal = SQLManager.getInstance().getMainMedal(player.getName());
-            if (medal != null) {
-                return medal.toString();
-            } else {
-                return "";
-            }
+        if (!identifier.equals("show")) {
+            return null;
         }
-        return null;
+        if (player == null) {
+            return "";
+        }
+
+        Medal medal = SQLManager.getInstance().getMainMedal(player.getName());
+        if (medal != null) {
+            return medal.toString();
+        } else {
+            return "";
+        }
     }
 
 
