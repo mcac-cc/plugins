@@ -44,6 +44,9 @@ public class CommandGem implements CommandExecutor {
             case "set":
                 set();
                 break;
+            case "delete":
+                delete();
+                break;
             case "check":
                 check();
                 break;
@@ -57,6 +60,7 @@ public class CommandGem implements CommandExecutor {
                 total();
                 break;
             default:
+                printHelp();
         }
         return true;
     }
@@ -74,6 +78,16 @@ public class CommandGem implements CommandExecutor {
             } catch (IllegalArgumentException e) {
                 sender.sendMessage(Message.ERROR + POSITIVE_AMOUNT_ERROR);
             }
+        }
+    }
+
+    private void delete() {
+        if (args.length != 2) {
+            sendParameterError();
+        } else if (Gem.getPlugin().getGemExecutor().deleteData(args[1])) {
+            sender.sendMessage(Message.INFO + args[1] + " 的宝石数据已删除");
+        } else {
+            sender.sendMessage(Message.ERROR + args[1] + " 没有可删除的宝石数据");
         }
     }
 

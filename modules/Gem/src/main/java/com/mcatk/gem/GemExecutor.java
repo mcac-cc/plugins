@@ -63,4 +63,12 @@ public class GemExecutor {
         MySQLManager.getInstance().updateData(name, gems, total);
         Gem.getPlugin().log(name + "获得宝石" + addGems);
     }
+
+    public boolean deleteData(String name) {
+        if (MySQLManager.getInstance().deleteData(name)) {
+            Gem.getPlugin().log(name + "宝石数据已删除");
+            return true;
+        }
+        return false;
+    }
 }

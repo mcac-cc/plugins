@@ -78,4 +78,30 @@ public class CommandGemTest {
         verify(sender).sendMessage(contains("宝石数量必须大于 0"));
         verifyNoInteractions(gemExecutor);
     }
+
+    @Test
+    public void testDeleteRemovesExistingPlayerData() {
+        CommandSender sender = mock(CommandSender.class);
+        when(sender.isOp()).thenReturn(true);
+        when(gemExecutor.deleteData("Steve")).thenReturn(true);
+
+        boolean result = commandGem.onCommand(sender, mock(Command.class), "gem", new String[]{"delete", "Steve"});
+
+        assertTrue(result);
+        verify(gemExecutor).deleteData("Steve");
+        verify(sender).sendMessage(contains("宝石数据已删除"));
+    }
+
+    @Test
+    public void testDeleteReportsMissingPlayerData() {
+        CommandSender sender = mock(CommandSender.class);
+        when(sender.isOp()).thenReturn(true);
+        when(gemExecutor.deleteData("Steve")).thenReturn(false);
+
+        boolean result = commandGem.onCommand(sender, mock(Command.class), "gem", new String[]{"delete", "Steve"});
+
+        assertTrue(result);
+        verify(gemExecutor).deleteData("Steve");
+        verify(sender).sendMessage(contains("没有可删除的宝石数据"));
+    }
 }

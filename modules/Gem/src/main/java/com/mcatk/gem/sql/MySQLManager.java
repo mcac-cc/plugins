@@ -159,4 +159,16 @@ public class MySQLManager {
         }
     }
 
+    public boolean deleteData(String name) {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "DELETE FROM `gem` WHERE `username` = ?"
+        )) {
+            ps.setString(1, name);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 }
