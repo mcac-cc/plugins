@@ -21,7 +21,7 @@ public class WhiteList implements Listener {
     public WhiteList(ACBungee plugin) {
         this.plugin = plugin;
         whiteList = new HashSet<>();
-        if (plugin.getConfiguration().getBoolean("whiteList")) {
+        if (plugin.getConfiguration().getBoolean("whitelist")) {
             on();
         } else {
             off();
