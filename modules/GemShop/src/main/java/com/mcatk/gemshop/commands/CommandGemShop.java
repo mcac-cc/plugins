@@ -1,7 +1,9 @@
 package com.mcatk.gemshop.commands;
 
 import com.mcatk.gemshop.GemShop;
+import com.mcatk.gemshop.Message;
 import com.mcatk.gemshop.shops.itemshop.ItemShopGui;
+import com.mcatk.gemshop.shops.itemshop.Items;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -29,11 +31,12 @@ public class CommandGemShop implements CommandExecutor {
                     GemShop.getPlugin().getShopFactory().getPermShop().buyPerm(player, id);
                     break;
                 case "item":
-                    player.openInventory(
-                            new ItemShopGui(
-                                    GemShop.getPlugin().getShopFactory().
-                                            getItemShop().getItems(id)).getGui()
-                    );
+                    Items items = GemShop.getPlugin().getShopFactory().getItemShop().getItems(id);
+                    if (items == null) {
+                        sender.sendMessage(Message.ERROR + "无该分类");
+                        break;
+                    }
+                    player.openInventory(new ItemShopGui(items).getGui());
                     break;
                 default:
                     sender.sendMessage("gemshop vip/perm/item");
