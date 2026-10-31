@@ -9,6 +9,7 @@ import org.mockito.Mockito;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class GemExecutorTest {
@@ -124,5 +125,15 @@ public class GemExecutorTest {
         assertFalse(executor.takeGems("TestPlayer", 0));
         assertFalse(executor.takeGems("TestPlayer", -5));
         verify(mySQLManager, never()).reduceGems(anyString(), anyInt());
+    }
+    @Test
+    public void databaseReadFailureDoesNotCreateOrOverwriteBalance() {
+        when(mySQLManager.getData("TestPlayer")).thenThrow(new IllegalStateException("Database unavailable"));
+
+        assertThrows(IllegalStateException.class, () -> new GemExecutor().addGems("TestPlayer", 20));
+
+        verify(mySQLManager, never()).insertData(anyString());
+        verify(mySQLManager, never()).updateData(anyString(), anyInt(), anyInt());
+        verify(gem, never()).log(anyString());
     }
 }
