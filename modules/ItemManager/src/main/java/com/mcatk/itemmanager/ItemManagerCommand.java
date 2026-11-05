@@ -1,5 +1,6 @@
 package com.mcatk.itemmanager;
 
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -72,7 +73,7 @@ public class ItemManagerCommand implements CommandExecutor {
         String itemId = args[2];
         Player player = (Player) sender;
         ItemStack itemInHand = player.getInventory().getItemInMainHand();
-        if (itemInHand == null || itemInHand.getType().isAir()) {
+        if (itemInHand == null || itemInHand.getType() == Material.AIR) {
             sender.sendMessage("请先手持要保存的物品。");
             return true;
         }

@@ -15,43 +15,69 @@ public class MySQLManager {
     private String userPassword;
     private Connection connection;
     private int port;
-    private static MySQLManager instance = null;
+    private boolean enabled;
+    private static final MySQLManager INSTANCE = new MySQLManager();
 
     public static MySQLManager getInstance() {
-        return instance == null ? instance = new MySQLManager() : instance;
+        return INSTANCE;
     }
 
-    public void enableMySQL() {
+    public synchronized void enableMySQL() {
         ip = Gem.getPlugin().getConfig().getString("mysql.ip");
         databaseName = Gem.getPlugin().getConfig().getString("mysql.databasename");
         userName = Gem.getPlugin().getConfig().getString("mysql.username");
         userPassword = Gem.getPlugin().getConfig().getString("mysql.password");
         port = Gem.getPlugin().getConfig().getInt("mysql.port");
-        connectMySQL();
-    }
-
-    public void shutdown() {
+        enabled = true;
         try {
-            connection.close();
+            getConnection();
         } catch (SQLException e) {
-            //断开连接失败
-            e.printStackTrace();
+            throw new IllegalStateException("Unable to connect to the Gem database", e);
         }
     }
 
-    private void connectMySQL() {
-        try {
-            connection = DriverManager.getConnection(
-                    "jdbc:mysql://" + ip + ":" + port + "/" + databaseName + "?autoReconnect=true&useSSL=false",
-                    userName, userPassword
-            );
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public synchronized void shutdown() {
+        enabled = false;
+        closeConnection();
+    }
+
+    private void closeConnection() {
+        Connection previous = connection;
+        connection = null;
+        if (previous != null) {
+            try {
+                previous.close();
+            } catch (SQLException e) {
+                // A broken connection can fail to close; it must still be discarded.
+            }
         }
     }
 
-    public void insertData(String name) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    // Callers hold this manager's monitor until their statement has finished.
+    private Connection getConnection() throws SQLException {
+        if (!enabled) {
+            throw new SQLException("Gem database is not enabled");
+        }
+        if (connection != null) {
+            try {
+                if (!connection.isClosed() && connection.isValid(2)) {
+                    return connection;
+                }
+            } catch (SQLException e) {
+                // Treat a failed validation as a stale connection.
+            }
+            closeConnection();
+        }
+        connection = DriverManager.getConnection(
+                "jdbc:mysql://" + ip + ":" + port + "/" + databaseName
+                        + "?useSSL=false&connectTimeout=5000&socketTimeout=5000",
+                userName, userPassword
+        );
+        return connection;
+    }
+
+    public synchronized void insertData(String name) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "INSERT INTO `gem` " +
                         "(`username`)" +
                         "VALUES (?)"
@@ -59,66 +85,68 @@ public class MySQLManager {
             ps.setString(1, name);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
     }
 
-    public Integer getGems(String name) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized Integer getGems(String name) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "SELECT * FROM `gem` WHERE `username` = ?"
         )) {
             ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("gems");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("gems");
+                }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
         return null;
     }
 
-    public Integer getTotal(String name) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized Integer getTotal(String name) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "SELECT * FROM `gem` WHERE `username` = ?"
         )) {
             ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("total");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total");
+                }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
         return null;
     }
 
-    public void setGems(String name, int num) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized void setGems(String name, int num) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "UPDATE `gem` SET `gems` = ? WHERE `username` = ?"
         )) {
             ps.setString(2, name);
             ps.setInt(1, num);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
     }
 
-    public void setTotal(String name, int num) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized void setTotal(String name, int num) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "UPDATE `gem` SET `total` = ? WHERE `username` = ?"
         )) {
             ps.setString(2, name);
             ps.setInt(1, num);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
     }
 
-    public boolean reduceGems(String name, int amount) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized boolean reduceGems(String name, int amount) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "UPDATE `gem` SET `gems` = `gems` - ? WHERE `username` = ? AND `gems` >= ?"
         )) {
             ps.setInt(1, amount);
@@ -126,28 +154,28 @@ public class MySQLManager {
             ps.setInt(3, amount);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
-        return false;
     }
 
-    public int[] getData(String name) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized int[] getData(String name) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "SELECT `gems`, `total` FROM `gem` WHERE `username` = ?"
         )) {
             ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return new int[]{rs.getInt("gems"), rs.getInt("total")};
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new int[]{rs.getInt("gems"), rs.getInt("total")};
+                }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
         return null;
     }
 
-    public void updateData(String name, int gems, int total) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized void updateData(String name, int gems, int total) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "UPDATE `gem` SET `gems` = ?, `total` = ? WHERE `username` = ?"
         )) {
             ps.setInt(1, gems);
@@ -155,20 +183,19 @@ public class MySQLManager {
             ps.setString(3, name);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
     }
 
-    public boolean deleteData(String name) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized boolean deleteData(String name) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "DELETE FROM `gem` WHERE `username` = ?"
         )) {
             ps.setString(1, name);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Gem database operation failed", e);
         }
-        return false;
     }
 
 }

@@ -33,8 +33,6 @@ public class LoginListener implements Listener {
                         p.sendMessage(message);
                     }
                 }
-                    }
-                }
             }
         }
     }

@@ -3,16 +3,20 @@ package com.mcatk.gemshop.commands;
 import com.mcatk.gemshop.GemShop;
 import com.mcatk.gemshop.shops.ShopFactory;
 import com.mcatk.gemshop.shops.itemshop.ItemShop;
+import com.mcatk.gemshop.shops.itemshop.ItemShopGui;
 import com.mcatk.gemshop.shops.itemshop.Items;
 import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.*;
 
@@ -52,7 +56,7 @@ public class CommandGemShopTest {
 
         assertTrue(result);
         verify(sender).sendMessage(contains("无该分类"));
-        verify(sender, never()).openInventory(any());
+        verify(sender, never()).openInventory(any(Inventory.class));
     }
 
     @Test
@@ -70,14 +74,21 @@ public class CommandGemShopTest {
         when(items.getId()).thenReturn("weapons");
         when(items.getMap()).thenReturn(new java.util.HashMap<>());
 
-        boolean result = commandGemShop.onCommand(
-                sender,
-                mock(Command.class),
-                "gemshop",
-                new String[]{"item", "weapons"}
-        );
+        Inventory inventory = mock(Inventory.class);
+        try (MockedConstruction<ItemShopGui> gui = mockConstruction(ItemShopGui.class,
+                (mock, context) -> {
+                    assertSame(items, context.arguments().get(0));
+                    when(mock.getGui()).thenReturn(inventory);
+                })) {
+            boolean result = commandGemShop.onCommand(
+                    sender,
+                    mock(Command.class),
+                    "gemshop",
+                    new String[]{"item", "weapons"}
+            );
 
-        assertTrue(result);
-        verify(sender).openInventory(any());
+            assertTrue(result);
+            verify(sender).openInventory(inventory);
+        }
     }
 }
