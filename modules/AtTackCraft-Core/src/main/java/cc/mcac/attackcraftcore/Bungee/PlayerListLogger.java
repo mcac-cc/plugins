@@ -16,8 +16,7 @@ public class PlayerListLogger {
     public void run() {
         plugin.getLogger().info("PlayerListLogger 开始工作");
         plugin.getProxy().getScheduler().schedule(plugin, () -> {
-            try {
-                Connection connection = plugin.getSqlManager().getConnection();
+            try (Connection connection = plugin.getSqlManager().getConnection()) {
                 try (PreparedStatement ps = connection.prepareStatement(
                         "INSERT INTO `server_player_list` (server_id, player_number, player_list) VALUES (?,?,?) " +
                                 "ON DUPLICATE KEY UPDATE player_number = ?, player_list = ?"

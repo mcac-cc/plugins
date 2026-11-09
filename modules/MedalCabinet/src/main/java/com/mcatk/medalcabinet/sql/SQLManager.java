@@ -10,45 +10,83 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SQLManager {
     private Connection connection;
+    private final String jdbcUrl;
+    private final String username;
+    private final String password;
+    private boolean stopped;
 
     private static SQLManager instance = null;
     private final Map<String, Medal> mainMedalCache = new ConcurrentHashMap<>();
     private static final Medal EMPTY_MEDAL = new Medal("", "", "", "");
 
-    public static SQLManager getInstance() {
+    public static synchronized SQLManager getInstance() {
         return instance == null ? instance = new SQLManager() : instance;
     }
 
-    public static void setInstance(SQLManager instance) {
+    public static synchronized void setInstance(SQLManager instance) {
         SQLManager.instance = instance;
     }
 
     private SQLManager() {
-        connectMySQL();
+        this("jdbc:mysql://" + MedalCabinet.getPlugin().getConfig().getString("mysql.ip")
+                        + ":" + MedalCabinet.getPlugin().getConfig().getInt("mysql.port")
+                        + "/" + MedalCabinet.getPlugin().getConfig().getString("mysql.databasename")
+                        + "?useSSL=false&connectTimeout=5000&socketTimeout=5000",
+                MedalCabinet.getPlugin().getConfig().getString("mysql.username"),
+                MedalCabinet.getPlugin().getConfig().getString("mysql.password"));
     }
 
-    protected SQLManager(Connection connection) {
-        this.connection = connection;
+    SQLManager(String jdbcUrl, String username, String password) {
+        this.jdbcUrl = jdbcUrl;
+        this.username = username;
+        this.password = password;
     }
 
-    private void connectMySQL() {
-        String ip = MedalCabinet.getPlugin().getConfig().getString("mysql.ip");
-        String databaseName = MedalCabinet.getPlugin().getConfig().getString("mysql.databasename");
-        String userName = MedalCabinet.getPlugin().getConfig().getString("mysql.username");
-        String userPassword = MedalCabinet.getPlugin().getConfig().getString("mysql.password");
-        int port = MedalCabinet.getPlugin().getConfig().getInt("mysql.port");
-        try {
-            connection = DriverManager.getConnection(
-                    "jdbc:mysql://" + ip + ":" + port + "/" + databaseName + "?autoReconnect=true&useSSL=false",
-                    userName, userPassword
-            );
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public static synchronized void shutdownInstance() {
+        if (instance != null) {
+            instance.shutdown();
         }
     }
 
-    public void createMedal(String medalID, String medalName, String medalMat, String medalDes) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized void shutdown() {
+        stopped = true;
+        closeConnection();
+        mainMedalCache.clear();
+    }
+
+    private void closeConnection() {
+        Connection previous = connection;
+        connection = null;
+        if (previous != null) {
+            try {
+                previous.close();
+            } catch (SQLException ignored) {
+                // Discard broken connections even if closing them fails.
+            }
+        }
+    }
+
+    // Public operations hold this manager's monitor until their statements finish.
+    private Connection getConnection() throws SQLException {
+        if (stopped) {
+            throw new SQLException("MedalCabinet database is shut down");
+        }
+        if (connection != null) {
+            try {
+                if (!connection.isClosed() && connection.isValid(2)) {
+                    return connection;
+                }
+            } catch (SQLException ignored) {
+                // A failed validation also requires replacing the connection.
+            }
+            closeConnection();
+        }
+        connection = DriverManager.getConnection(jdbcUrl, username, password);
+        return connection;
+    }
+
+    public synchronized void createMedal(String medalID, String medalName, String medalMat, String medalDes) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "INSERT INTO `medal` " +
                         "(`medal_id`, `medal_name`, `medal_material`,`medal_description`)" +
                         "VALUES " +
@@ -64,52 +102,61 @@ public class SQLManager {
         }
     }
 
-    public boolean doesPlayerHaveMedal(String playerID, String medalID) {
-        try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized boolean doesPlayerHaveMedal(String playerID, String medalID) {
+        try {
+            return hasPlayerMedal(playerID, medalID);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean hasPlayerMedal(String playerID, String medalID) throws SQLException {
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "SELECT * FROM player_medal WHERE player_id = ? and medal_id = ?"
         )) {
             ps.setString(1, playerID);
             ps.setString(2, medalID);
-            ResultSet rs = ps.executeQuery();
-            return rs.next();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
-        return false;
     }
 
-    public void addPlayerMedal(String playerID, String medalID) {
+    public synchronized void addPlayerMedal(String playerID, String medalID) {
         try {
-            if (doesPlayerHaveMedal(playerID, medalID)) {
+            if (hasPlayerMedal(playerID, medalID)) {
                 return;
             }
-            PreparedStatement ps = connection.prepareStatement(
+            try (PreparedStatement ps = getConnection().prepareStatement(
                     "INSERT INTO `player_medal` " +
                             "(`player_id`, `medal_id`)" +
                             "VALUES " +
                             "(?,?)"
-            );
-            ps.setString(1, playerID);
-            ps.setString(2, medalID);
-            ps.executeUpdate();
+            )) {
+                ps.setString(1, playerID);
+                ps.setString(2, medalID);
+                ps.executeUpdate();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public ArrayList<Medal> getAllMedals() {
+    public synchronized ArrayList<Medal> getAllMedals() {
         ArrayList<Medal> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "SELECT * FROM medal"
         )) {
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(new Medal(
-                        rs.getString("medal_id"),
-                        rs.getString("medal_name"),
-                        rs.getString("medal_material"),
-                        rs.getString("medal_description")
-                ));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Medal(
+                            rs.getString("medal_id"),
+                            rs.getString("medal_name"),
+                            rs.getString("medal_material"),
+                            rs.getString("medal_description")
+                    ));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -117,20 +164,21 @@ public class SQLManager {
         return list;
     }
 
-    public Medal getMedal(String medalID) {
+    public synchronized Medal getMedal(String medalID) {
         Medal medal = null;
-        try (PreparedStatement ps = connection.prepareStatement(
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "SELECT * FROM medal WHERE medal_id = ?"
         )) {
             ps.setString(1, medalID);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                medal = new Medal(
-                        rs.getString("medal_id"),
-                        rs.getString("medal_name"),
-                        rs.getString("medal_material"),
-                        rs.getString("medal_description")
-                );
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    medal = new Medal(
+                            rs.getString("medal_id"),
+                            rs.getString("medal_name"),
+                            rs.getString("medal_material"),
+                            rs.getString("medal_description")
+                    );
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -138,21 +186,22 @@ public class SQLManager {
         return medal;
     }
 
-    public ArrayList<Medal> getPlayerMedals(String playerID) {
+    public synchronized ArrayList<Medal> getPlayerMedals(String playerID) {
         ArrayList<Medal> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(
+        try (PreparedStatement ps = getConnection().prepareStatement(
                 "SELECT DISTINCT m.* FROM medal m INNER JOIN player_medal pm ON m.medal_id = pm.medal_id WHERE pm.player_id = ?"
         )) {
             ps.setString(1, playerID);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Medal medal = new Medal(
-                        rs.getString("medal_id"),
-                        rs.getString("medal_name"),
-                        rs.getString("medal_material"),
-                        rs.getString("medal_description")
-                );
-                list.add(medal);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Medal medal = new Medal(
+                            rs.getString("medal_id"),
+                            rs.getString("medal_name"),
+                            rs.getString("medal_material"),
+                            rs.getString("medal_description")
+                    );
+                    list.add(medal);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -160,52 +209,57 @@ public class SQLManager {
         return list;
     }
 
-    public boolean setMainMedal(String playerID, String medalID) {
-        if (doesPlayerHaveMedal(playerID, medalID)) {
-            try (PreparedStatement ps = connection.prepareStatement(
+    public synchronized boolean setMainMedal(String playerID, String medalID) {
+        try {
+            if (!hasPlayerMedal(playerID, medalID)) {
+                return false;
+            }
+            try (PreparedStatement ps = getConnection().prepareStatement(
                     "INSERT INTO `player_main_medal` (player_id, medal_id) VALUES (?,?) ON DUPLICATE KEY UPDATE medal_id = ?"
             )) {
                 ps.setString(1, playerID);
                 ps.setString(2, medalID);
                 ps.setString(3, medalID);
+                // The update may commit even if its response is lost.
+                mainMedalCache.remove(playerID);
                 ps.executeUpdate();
 
-                Medal newMain = getMedal(medalID);
-                if (newMain != null) {
-                    mainMedalCache.put(playerID, newMain);
-                }
-
                 return true;
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return false;
     }
 
-    public Medal getMainMedal(String playerID) {
-        if (mainMedalCache.containsKey(playerID)) {
-            Medal cached = mainMedalCache.get(playerID);
+    public synchronized Medal getMainMedal(String playerID) {
+        Medal cached = mainMedalCache.get(playerID);
+        if (cached != null) {
             return cached == EMPTY_MEDAL ? null : cached;
         }
 
         Medal medal = null;
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT medal_id FROM `player_main_medal` WHERE player_id = ?"
+        try (PreparedStatement ps = getConnection().prepareStatement(
+                "SELECT m.* FROM medal m INNER JOIN player_main_medal pm "
+                        + "ON m.medal_id = pm.medal_id WHERE pm.player_id = ?"
         )) {
             ps.setString(1, playerID);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                medal = getMedal(rs.getString("medal_id"));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    medal = new Medal(rs.getString("medal_id"), rs.getString("medal_name"),
+                            rs.getString("medal_material"), rs.getString("medal_description"));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            // An unavailable database does not mean the player has no medal.
+            return null;
         }
         mainMedalCache.put(playerID, medal == null ? EMPTY_MEDAL : medal);
         return medal;
     }
 
-    public void clearCache(String playerID) {
+    public synchronized void clearCache(String playerID) {
         mainMedalCache.remove(playerID);
     }
 

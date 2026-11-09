@@ -5,6 +5,7 @@ import com.mcatk.medalcabinet.command.MedalShowCmd;
 import com.mcatk.medalcabinet.command.MedalUsualCmd;
 import com.mcatk.medalcabinet.listener.MedalPlayerListener;
 import com.mcatk.medalcabinet.papi.MedalPapi;
+import com.mcatk.medalcabinet.sql.SQLManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,6 +20,7 @@ public final class MedalCabinet extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
+        SQLManager.setInstance(null);
         saveDefaultConfig();
         regCommand();
         regDependency();
@@ -28,7 +30,7 @@ public final class MedalCabinet extends JavaPlugin {
 
     @Override
     public void onDisable() {
-
+        SQLManager.shutdownInstance();
     }
 
     private void regCommand() {

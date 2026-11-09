@@ -24,6 +24,6 @@ public class DbConfig {
     }
 
     public String toJdbcUrl() {
-        return "jdbc:mysql://" + host + ":" + port + "/" + database + "?autoReconnect=true&useSSL=false";
+        return "jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&connectTimeout=5000&socketTimeout=5000";
     }
 }
