@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -51,6 +52,13 @@ public class GemListener implements Listener {
                     }
                 }
             }
+        }
+    }
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (event.getInventory().getTitle().contains("§6宝石商店-")
+                && event.getRawSlots().stream().anyMatch(slot -> slot < event.getInventory().getSize())) {
+            event.setCancelled(true);
         }
     }
 }

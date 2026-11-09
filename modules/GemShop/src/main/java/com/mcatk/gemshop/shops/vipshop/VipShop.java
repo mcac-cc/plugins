@@ -1,52 +1,33 @@
 package com.mcatk.gemshop.shops.vipshop;
 
-import com.mcatk.gem.Gem;
+import com.mcatk.gemshop.GemShop;
 import com.mcatk.gemshop.Message;
 import com.mcatk.gemshop.ServerCmd;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class VipShop {
-    
     public void buyVip(Player player, String vipType) {
-//        new BukkitRunnable() {
-//            @Override
-//            public void run() {
-                if (getPrice(vipType) == -1) {
-                    player.sendMessage(Message.ERROR + "无效的VIP类型");
-                    return;
-                }
-                if (player.hasPermission("cmi.command.se")) {
-                    player.sendMessage(Message.INFO + "已拥有VIP");
-                } else if (Gem.getPlugin().getGemExecutor().
-                        takeGems(player.getName(), getPrice(vipType))) {
-                    String cmd = String.format(
-                            "lp user %s parent addtemp %s 30d",
-                            player.getName(), vipType
-                    );
-                    ServerCmd.sendConsoleCmd(cmd);
-                    player.sendMessage(Message.INFO + "成功开通" + vipType + "30天");
-                    Bukkit.getLogger().info(player.getName() + "成功开通" + vipType + "30天");
-                } else {
-                    player.sendMessage(Message.ERROR + "宝石不足");
-                }
-//            }
-//        }.runTaskAsynchronously(Gem.getPlugin());
+        int price = getPrice(vipType);
+        if (price < 0) {
+            player.sendMessage(Message.ERROR + "无效的VIP类型");
+            return;
+        }
+        GemShop.getPlugin().getPurchases().buy(player, price, () -> {
+            if (player.hasPermission("cmi.command.se")) {
+                player.sendMessage(Message.INFO + "已拥有VIP");
+                return false;
+            }
+            return true;
+        }, () -> ServerCmd.sendConsoleCmd(String.format(
+                "lp user %s parent addtemp %s 30d", player.getName(), vipType)));
     }
-    
+
     private int getPrice(String vipType) {
         switch (vipType) {
-            case "vip":
-                return 10;
-            case "svip":
-                return 20;
-            case "mvp":
-                return 30;
-            default:
-                return -1;
-            //impossible
+            case "vip": return 10;
+            case "svip": return 20;
+            case "mvp": return 30;
+            default: return -1;
         }
     }
-    
 }

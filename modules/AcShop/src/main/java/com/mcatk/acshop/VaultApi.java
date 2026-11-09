@@ -26,7 +26,11 @@ public class VaultApi {
     
     //经济操作
     public static boolean takePlayerMoney(Player p, double m) {
+        if (econ == null) return false;
         EconomyResponse r = econ.withdrawPlayer(p, m);
         return r.transactionSuccess();
+    }
+    public static boolean refundPlayerMoney(Player player, double amount) {
+        return econ.depositPlayer(player, amount).transactionSuccess();
     }
 }

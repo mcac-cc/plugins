@@ -3,12 +3,15 @@ package com.mcatk.gemshop;
 import org.bukkit.Bukkit;
 
 public class ServerCmd {
-    public static void sendConsoleCmd(String cmd) {
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+    public static boolean sendConsoleCmd(String cmd) {
+        if (!Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd)) {
+            throw new IllegalStateException("Command was not acknowledged; reconcile delivery before retrying");
+        }
+        return true;
     }
     
-    public static void addPermission(String player, String permission) {
-        sendConsoleCmd("lp user " + player + " permission set " + permission + " true");
+    public static boolean addPermission(String player, String permission) {
+        return sendConsoleCmd("lp user " + player + " permission set " + permission + " true");
     }
     
     public static void removePermission(String player, String permission) {

@@ -13,7 +13,9 @@ import org.mockito.Mockito;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
+import java.util.function.Supplier;
+import java.util.function.Consumer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -35,6 +37,12 @@ public class CommandGemTest {
 
         gemStatic.when(Gem::getPlugin).thenReturn(plugin);
         when(plugin.getGemExecutor()).thenReturn(gemExecutor);
+        doAnswer(invocation -> {
+            Supplier<?> work = invocation.getArgument(0);
+            Consumer<Object> complete = invocation.getArgument(1);
+            complete.accept(work.get());
+            return null;
+        }).when(plugin).queryAsync(any(), any(), any());
     }
 
     @After
