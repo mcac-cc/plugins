@@ -2,7 +2,6 @@ package com.mcatk.guildmanager;
 
 import com.mcatk.guildmanager.command.GuildCommand;
 import com.mcatk.guildmanager.core.config.DbConfig;
-import com.mcatk.guildmanager.core.repository.GuildRepository;
 import com.mcatk.guildmanager.core.repository.jdbc.JdbcGuildRepository;
 import com.mcatk.guildmanager.core.service.GuildService;
 import com.mcatk.guildmanager.models.Guild;
@@ -21,6 +20,7 @@ public final class GuildManager extends JavaPlugin {
     private static GuildManager plugin;
     private static Economy econ;
     private GuildService guildService;
+    private JdbcGuildRepository repository;
 
     public static GuildManager getPlugin() {
         return plugin;
@@ -44,6 +44,9 @@ public final class GuildManager extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (repository != null) {
+            repository.close();
+        }
         getLogger().info("公会管理插件已关闭");
     }
 
@@ -110,7 +113,7 @@ public final class GuildManager extends JavaPlugin {
         String userPassword = getConfig().getString("mysql.password");
         int port = getConfig().getInt("mysql.port");
         DbConfig dbConfig = new DbConfig(ip, port, databaseName, userName, userPassword);
-        GuildRepository repository = new JdbcGuildRepository(dbConfig);
+        repository = new JdbcGuildRepository(dbConfig);
         guildService = new GuildService(repository);
     }
 
