@@ -3,91 +3,42 @@ package com.mcatk.medalcabinet.command;
 import com.mcatk.medalcabinet.MedalCabinet;
 import com.mcatk.medalcabinet.medal.Medal;
 import com.mcatk.medalcabinet.sql.SQLManager;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import java.util.Locale;
 
 public class MedalAdminCmd implements CommandExecutor {
-    private CommandSender sender;
-    private String[] args;
-
-    public MedalAdminCmd() {
-    }
-
-    private void printHelp() {
-        sender.sendMessage("§e------------帮助------------");
-        sender.sendMessage("§a/medaladmin create <medalId> <Name> <Material> <Description> §2创建勋章");
-        sender.sendMessage("§a/medaladmin add <player> <medalId> §2添加勋章");
-        sender.sendMessage("§a/medaladmin check <player> §2查看玩家勋章");
-        sender.sendMessage("§a/medaladmin list §2勋章列表");
-    }
-
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.isOp()) {
-            return false;
-        }
-        this.sender = sender;
-        this.args = args;
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] arguments) {
+        if (!sender.isOp()) return false;
+        String[] args = arguments.clone();
         if (args.length == 0) {
-            printHelp();
+            sender.sendMessage("/medaladmin create <ID> <名称> <材质> <说明> | add <玩家> <ID> | check <玩家> | list");
             return true;
         }
-        Bukkit.getScheduler().runTaskAsynchronously(MedalCabinet.getPlugin(), () -> {
-            switch (args[0].toLowerCase()) {
-                case "create":
-                    create();
-                    break;
-                case "add":
-                    add();
-                    break;
-                case "list":
-                    list();
-                    break;
+        String action = args[0].toLowerCase(Locale.ROOT);
+        int length = "create".equals(action) ? 5 : "add".equals(action) ? 3
+                : "check".equals(action) ? 2 : "list".equals(action) ? 1 : -1;
+        if (args.length != length) {
+            sender.sendMessage("§c参数错误，请输入 /medaladmin 查看帮助");
+            return true;
+        }
+        MedalCabinet.getPlugin().queryAsync(() -> {
+            SQLManager sql = SQLManager.getInstance();
+            switch (action) {
+                case "create": sql.createMedal(args[1], args[2], args[3], args[4]); return "Ok";
+                case "add": sql.addPlayerMedal(args[1], args[2]); return "Ok";
                 case "check":
-                    check();
-                    break;
+                    StringBuilder playerMedals = new StringBuilder(args[1]).append("的勋章：\n");
+                    for (Medal medal : sql.getPlayerMedals(args[1])) playerMedals.append(medal).append(' ');
+                    return playerMedals.toString();
                 default:
+                    StringBuilder medals = new StringBuilder();
+                    for (Medal medal : sql.getAllMedals()) medals.append(medal).append('\n');
+                    return medals.toString();
             }
-        });
+        }, sender::sendMessage, error -> sender.sendMessage("§c数据库操作失败，请稍后重试"));
         return true;
-    }
-
-    private void create() {
-        if (args.length == 5) {
-            String id = args[1];
-            String name = args[2];
-            String mat = args[3];
-            String des = args[4];
-            SQLManager.getInstance().createMedal(id, name, mat, des);
-            sender.sendMessage("Ok");
-        }
-    }
-
-    private void add() {
-        if (args.length == 3) {
-            String playerID = args[1];
-            String medalID = args[2];
-            SQLManager.getInstance().addPlayerMedal(playerID, medalID);
-            sender.sendMessage("Ok");
-        }
-    }
-
-    private void list() {
-        for (Medal medal : SQLManager.getInstance().getAllMedals()) {
-            sender.sendMessage(medal.toString() + "\n");
-        }
-    }
-
-    private void check() {
-        String playerID = args[1];
-        StringBuilder stringBuilder = new StringBuilder("§d§l勋章系统 §7>>> §e")
-                .append(playerID)
-                .append("的勋章：\n");
-        for (Medal medal : SQLManager.getInstance().getPlayerMedals(playerID)) {
-            stringBuilder.append(medal).append(" ");
-        }
-        sender.sendMessage(stringBuilder.toString());
     }
 }

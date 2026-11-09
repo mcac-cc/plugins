@@ -133,7 +133,7 @@ class SQLManagerTest {
     void doesNotReplayAnAmbiguousWrite() throws SQLException {
         SQLException failure1 = new SQLException("Lost response after commit", "08S01");
         when(statement.executeUpdate()).thenThrow(failure1);
-        manager.createMedal("id", "name", "STONE", "description");
+        assertThrows(IllegalStateException.class, () -> manager.createMedal("id", "name", "STONE", "description"));
         verify(statement).executeUpdate();
         verify(statement).close();
         driver.verify(() -> DriverManager.getConnection(URL, "test", "test"), times(1));
@@ -143,7 +143,7 @@ class SQLManagerTest {
     void failedOwnershipQueryCannotProceedToGrantAMedal() throws SQLException {
         SQLException failure1 = new SQLException("Database unavailable");
         when(statement.executeQuery()).thenThrow(failure1);
-        manager.addPlayerMedal("player", "medal");
+        assertThrows(IllegalStateException.class, () -> manager.addPlayerMedal("player", "medal"));
         verify(statement, never()).executeUpdate();
     }
 
