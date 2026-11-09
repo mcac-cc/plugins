@@ -21,6 +21,7 @@ public final class GuildManager extends JavaPlugin {
     private static Economy econ;
     private GuildService guildService;
     private JdbcGuildRepository repository;
+    private GuildPayments payments;
 
     public static GuildManager getPlugin() {
         return plugin;
@@ -35,6 +36,7 @@ public final class GuildManager extends JavaPlugin {
         plugin = this;
         saveDefaultConfig();
         initGuildService();
+        payments = new GuildPayments(this);
         registerDependency();
         registerCommand();
         registerListener();
@@ -44,6 +46,7 @@ public final class GuildManager extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (payments != null) payments.close();
         if (repository != null) {
             repository.close();
         }
@@ -102,8 +105,29 @@ public final class GuildManager extends JavaPlugin {
     }
 
     public boolean takePlayerMoney(Player p, double m) {
+        if (econ == null) return false;
         EconomyResponse r = econ.withdrawPlayer(p, m);
         return r.transactionSuccess();
+    }
+
+    public boolean refundPlayerMoney(Player player, double amount) {
+        return econ.depositPlayer(player, amount).transactionSuccess();
+    }
+
+    public GuildPayments getPayments() { return payments; }
+
+    public <T> void queryAsync(java.util.function.Supplier<T> work, java.util.function.Consumer<T> success,
+                               java.util.function.Consumer<Throwable> failure) {
+        org.bukkit.scheduler.BukkitScheduler scheduler = Bukkit.getScheduler();
+        scheduler.runTaskAsynchronously(this, () -> {
+            try {
+                T result = work.get();
+                if (isEnabled()) scheduler.runTask(this, () -> success.accept(result));
+            } catch (Exception e) {
+                getLogger().log(java.util.logging.Level.WARNING, "Guild database operation failed", e);
+                if (isEnabled()) scheduler.runTask(this, () -> failure.accept(e));
+            }
+        });
     }
 
     private void initGuildService() {

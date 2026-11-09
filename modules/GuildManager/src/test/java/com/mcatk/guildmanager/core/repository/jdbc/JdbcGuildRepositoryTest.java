@@ -31,17 +31,19 @@ public class JdbcGuildRepositoryTest {
         ResultSet result = mock(ResultSet.class);
         when(fresh.isValid(2)).thenReturn(true);
         when(fresh.prepareStatement(anyString())).thenReturn(statement);
+        when(stale.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(result);
         when(result.next()).thenReturn(true);
         when(result.getString("g.guild_id")).thenReturn("guild");
         try (MockedStatic<DriverManager> driver = mockStatic(DriverManager.class)) {
             driver.when(() -> DriverManager.getConnection(config.toJdbcUrl(), "test", "test")).thenReturn(stale, fresh);
             JdbcGuildRepository repository = new JdbcGuildRepository(config);
+            assertEquals("guild", repository.getPlayerGuildId("initial"));
             assertEquals("guild", repository.getPlayerGuildId("player"));
             assertEquals("guild", repository.getPlayerGuildId("player"));
             verify(stale).close();
-            verify(stale, never()).prepareStatement(anyString());
-            verify(result, times(2)).close();
+            verify(stale).prepareStatement(anyString());
+            verify(result, times(3)).close();
         }
     }
 
@@ -56,9 +58,11 @@ public class JdbcGuildRepositoryTest {
         PreparedStatement statement = mock(PreparedStatement.class);
         when(closed.prepareStatement(anyString())).thenReturn(statement);
         when(fresh.prepareStatement(anyString())).thenReturn(statement);
+        when(stale.prepareStatement(anyString())).thenReturn(statement);
         try (MockedStatic<DriverManager> driver = mockStatic(DriverManager.class)) {
             driver.when(() -> DriverManager.getConnection(config.toJdbcUrl(), "test", "test")).thenReturn(stale, closed, fresh);
             JdbcGuildRepository repository = new JdbcGuildRepository(config);
+            repository.updateMember(mock(com.mcatk.guildmanager.models.Member.class));
             repository.updateMember(mock(com.mcatk.guildmanager.models.Member.class));
             repository.updateMember(mock(com.mcatk.guildmanager.models.Member.class));
             verify(stale).close();
@@ -75,6 +79,7 @@ public class JdbcGuildRepositoryTest {
         PreparedStatement statement = mock(PreparedStatement.class);
         ResultSet result = mock(ResultSet.class);
         when(fresh.prepareStatement(anyString())).thenReturn(statement);
+        when(stale.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(result);
         when(result.next()).thenReturn(true);
         when(result.getString("g.guild_id")).thenReturn("guild");
@@ -82,6 +87,7 @@ public class JdbcGuildRepositoryTest {
             driver.when(() -> DriverManager.getConnection(config.toJdbcUrl(), "test", "test"))
                     .thenReturn(stale).thenThrow(failure1).thenReturn(fresh);
             JdbcGuildRepository repository = new JdbcGuildRepository(config);
+            assertEquals("guild", repository.getPlayerGuildId("initial"));
             assertThrows(IllegalStateException.class, () -> repository.getPlayerGuildId("player"));
             assertEquals("guild", repository.getPlayerGuildId("player"));
         }
@@ -140,6 +146,8 @@ public class JdbcGuildRepositoryTest {
         try (MockedStatic<DriverManager> driver = mockStatic(DriverManager.class)) {
             driver.when(() -> DriverManager.getConnection(config.toJdbcUrl(), "test", "test")).thenReturn(connection);
             JdbcGuildRepository repository = new JdbcGuildRepository(config);
+            repository.createGuild("initial", "player");
+            clearInvocations(statement);
             ExecutorService workers = Executors.newFixedThreadPool(2);
             try {
                 Future<?> query = workers.submit(() -> repository.getPlayerGuildId("player"));
@@ -162,4 +170,38 @@ public class JdbcGuildRepositoryTest {
         }
     }
 
+
+    @Test
+    public void lostCommitResponseIsUnknownAndIsNeverReplayed() throws Exception {
+        SQLException failure = new SQLException("Lost commit response", "08S01");
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        doThrow(failure).when(connection).commit();
+        try (MockedStatic<DriverManager> driver = mockStatic(DriverManager.class)) {
+            driver.when(() -> DriverManager.getConnection(config.toJdbcUrl(), "test", "test")).thenReturn(connection);
+            JdbcGuildRepository repository = new JdbcGuildRepository(config);
+            GuildTransactionException error = assertThrows(GuildTransactionException.class,
+                    () -> repository.createGuildWithChairman("ac", "Alice"));
+            assertTrue(error.isOutcomeUnknown());
+            verify(connection).commit();
+            verify(statement, times(2)).executeUpdate();
+            verify(connection).close();
+        }
+    }
+
+    @Test
+    public void resetFailureAfterSuccessfulCommitMustNotBeReportedAsARollback() throws Exception {
+        SQLException failure = new SQLException("Reset failed");
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        doThrow(failure).when(connection).setAutoCommit(true);
+        try (MockedStatic<DriverManager> driver = mockStatic(DriverManager.class)) {
+            driver.when(() -> DriverManager.getConnection(config.toJdbcUrl(), "test", "test")).thenReturn(connection);
+            new JdbcGuildRepository(config).createGuildWithChairman("ac", "Alice");
+            verify(connection).commit();
+            verify(connection).close();
+        }
+    }
 }

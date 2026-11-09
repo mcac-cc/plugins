@@ -20,11 +20,6 @@ public class JdbcGuildRepository implements GuildRepository, AutoCloseable {
 
     public JdbcGuildRepository(DbConfig config) {
         this.config = config;
-        try {
-            getConnection();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Unable to connect to the GuildManager database", e);
-        }
     }
 
     private void closeConnection() {
@@ -182,8 +177,9 @@ public class JdbcGuildRepository implements GuildRepository, AutoCloseable {
 
     @Override
     public synchronized void removeMember(String playerId, String guildId) {
-        try (PreparedStatement ps = getConnection().prepareStatement(SqlCommand.DELETE_PLAYER.toString())) {
+        try (PreparedStatement ps = getConnection().prepareStatement("DELETE FROM player_guild WHERE player_id=? AND guild_id=?")) {
             ps.setString(1, playerId);
+            ps.setString(2, guildId);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("GuildManager database operation failed", e);
@@ -255,5 +251,87 @@ public class JdbcGuildRepository implements GuildRepository, AutoCloseable {
             throw new IllegalStateException("GuildManager database operation failed", e);
         }
         return list;
+    }
+
+    @Override
+    public synchronized void validateTransactionalTables() {
+        try (PreparedStatement statement = getConnection().prepareStatement(
+                "SELECT TABLE_NAME,ENGINE FROM information_schema.TABLES "
+                        + "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('guild','player_guild')");
+             ResultSet result = statement.executeQuery()) {
+            int tables = 0;
+            while (result.next()) {
+                if (!"InnoDB".equalsIgnoreCase(result.getString("ENGINE"))) {
+                    throw new IllegalStateException("Guild payment tables must use InnoDB");
+                }
+                tables++;
+            }
+            if (tables != 2) throw new IllegalStateException("Guild payment tables are missing");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Cannot validate Guild payment tables", e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface TransactionWork { void run(Connection connection) throws SQLException; }
+
+    private void transaction(TransactionWork work) {
+        boolean committing = false;
+        boolean committed = false;
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            connection.setAutoCommit(false);
+            work.run(connection);
+            committing = true;
+            connection.commit();
+            committed = true;
+        } catch (SQLException | RuntimeException e) {
+            if (connection != null && !committing) {
+                try { connection.rollback(); }
+                catch (SQLException rollback) { e.addSuppressed(rollback); }
+            }
+            closeConnection();
+            throw new GuildTransactionException("Guild transaction failed", e, committing);
+        } finally {
+            if (committed) {
+                try { connection.setAutoCommit(true); }
+                catch (SQLException e) { closeConnection(); } // The commit already succeeded; do not refund it.
+            }
+        }
+    }
+
+    @Override
+    public synchronized void createGuildWithChairman(String id, String chairman) {
+        transaction(connection -> {
+            try (PreparedStatement guild = connection.prepareStatement(SqlCommand.CREATE_GUILD.toString());
+                 PreparedStatement member = connection.prepareStatement(SqlCommand.CREATE_PLAYER.toString())) {
+                guild.setString(1, id); guild.setString(2, chairman); guild.executeUpdate();
+                member.setString(1, chairman); member.setString(2, id); member.executeUpdate();
+            }
+        });
+    }
+
+    @Override
+    public synchronized void donate(String playerId, String guildId, int cash, int contribution) {
+        if (cash <= 0 || contribution <= 0) throw new IllegalArgumentException("Donation must be positive");
+        transaction(connection -> {
+            try (PreparedStatement member = connection.prepareStatement(
+                    "SELECT player_id FROM player_guild WHERE player_id=? AND guild_id=? FOR UPDATE")) {
+                member.setString(1, playerId); member.setString(2, guildId);
+                try (ResultSet result = member.executeQuery()) {
+                    if (!result.next()) throw new SQLException("Player is no longer a guild member");
+                }
+            }
+            try (PreparedStatement guild = connection.prepareStatement(
+                    "UPDATE guild SET guild_cash=guild_cash+? WHERE guild_id=?");
+                 PreparedStatement member = connection.prepareStatement(
+                    "UPDATE player_guild SET player_contribution=LEAST(100,player_contribution+?) WHERE player_id=? AND guild_id=?")) {
+                guild.setInt(1, cash); guild.setString(2, guildId);
+                if (guild.executeUpdate() != 1) throw new SQLException("Guild no longer exists");
+                member.setInt(1, contribution); member.setString(2, playerId); member.setString(3, guildId);
+                member.executeUpdate();
+            }
+        });
     }
 }
