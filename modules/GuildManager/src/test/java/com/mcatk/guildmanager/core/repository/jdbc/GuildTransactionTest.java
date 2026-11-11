@@ -16,10 +16,19 @@ public class GuildTransactionTest {
             @Override public String toJdbcUrl() { return url; }
         });
         try(Connection c=DriverManager.getConnection(url,"sa","");Statement s=c.createStatement()) {
-            s.execute("CREATE TABLE guild(guild_id VARCHAR(32) PRIMARY KEY,guild_chairman VARCHAR(64),guild_cash INT DEFAULT 0)");
+            s.execute("CREATE TABLE guild(guild_id VARCHAR(32) PRIMARY KEY,guild_chairman VARCHAR(64),guild_vice_chairman_1 VARCHAR(64),guild_vice_chairman_2 VARCHAR(64),guild_cash INT DEFAULT 0)");
             s.execute("CREATE TABLE player_guild(player_id VARCHAR(64) PRIMARY KEY,guild_id VARCHAR(32),player_contribution INT DEFAULT 0,player_is_advanced BOOLEAN DEFAULT FALSE,FOREIGN KEY(guild_id) REFERENCES guild(guild_id))");
         }
     }
+    @Test public void removalOnlySucceedsForCurrentMembershipOnce() {
+        repository.createGuildWithChairman("ac", "Alice");
+        repository.addMember("Bob", "ac");
+        assertFalse(repository.removeMember("Alice", "ac"));
+        assertFalse(repository.removeMember("Bob", "other"));
+        assertTrue(repository.removeMember("Bob", "ac"));
+        assertFalse(repository.removeMember("Bob", "ac"));
+    }
+
     private int count(String query) throws Exception {
         try(Connection c=DriverManager.getConnection(url,"sa","");Statement s=c.createStatement();ResultSet r=s.executeQuery(query)) {r.next();return r.getInt(1);}
     }

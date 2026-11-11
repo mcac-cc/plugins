@@ -51,7 +51,9 @@ public class OperationTest {
         try(MockedStatic<ItemManager> items=mockStatic(ItemManager.class);MockedStatic<VaultApi> vault=mockStatic(VaultApi.class)) {
             new Operation().buy(player,new Item(ItemType.ITEM_STACK,"missing",100,"sort","item"));
             new Operation().buy(player,new Item(ItemType.ITEM_CMD,"empty",100,""));
-            vault.verify(()->VaultApi.takePlayerMoney(any(),anyDouble()),never());
+            new Operation().buy(player,new Item(ItemType.ITEM_CMD,"legacy",100,"give %p stone"));
+            vault.verifyNoInteractions();
+            verify(player,never()).setOp(anyBoolean());
         }
     }
 }

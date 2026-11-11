@@ -26,7 +26,7 @@ public interface GuildRepository {
 
     void addMember(String playerId, String guildId);
 
-    void removeMember(String playerId, String guildId);
+    boolean removeMember(String playerId, String guildId);
 
     HashMap<String, Guild> getAllGuilds();
 }

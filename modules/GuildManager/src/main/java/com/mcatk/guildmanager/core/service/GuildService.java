@@ -52,7 +52,7 @@ public class GuildService {
     public void saveGuild(Guild guild) { repository.updateGuild(guild); }
     public void saveMember(Member member) { repository.updateMember(member); }
     public void addMember(String player, String guild) { repository.addMember(player, guild); }
-    public void removeMember(String player, String guild) { repository.removeMember(player, guild); }
+    public boolean removeMember(String player, String guild) { return repository.removeMember(player, guild); }
     public HashMap<String, Guild> getGuilds() {
         HashMap<String, Guild> result = new HashMap<>();
         snapshot.guilds.forEach((id, guild) -> result.put(id, copy(guild)));

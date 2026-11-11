@@ -1,6 +1,7 @@
 package com.mcatk.gemshop.shops.permshop;
 
 import com.mcatk.gemshop.GemShop;
+import com.mcatk.gemshop.Product;
 import com.mcatk.gemshop.Message;
 import com.mcatk.gemshop.ServerCmd;
 import org.bukkit.entity.Player;
@@ -21,7 +22,7 @@ public class PermShop {
             player.sendMessage(Message.ERROR + "无该权限");
             return;
         }
-        GemShop.getPlugin().getPurchases().buy(player, price, () -> {
+        GemShop.getPlugin().getPurchases().buy(player, price, Product.permission(permission), () -> {
             if (player.hasPermission(permission)) {
                 player.sendMessage(Message.INFO + "已拥有该权限");
                 return false;

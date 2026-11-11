@@ -26,35 +26,21 @@ public class ShopGui {
                 createInventory(null, 54, shop.getName() + "  §6AC商店-" + shop.getId());
         ArrayList<String> keySet = new ArrayList<>(shop.getItemHashMap().keySet());
         Collections.sort(keySet);
+        int slot = 0;
         for (String key : keySet) {
-            if (gui.firstEmpty() != -1) {
-                gui.addItem(getIcon(shop.getItemHashMap().get(key)));
+            if (slot == 53) break;
+            Item item = shop.getItemHashMap().get(key);
+            if (item.getType() == ItemType.ITEM_STACK) {
+                gui.setItem(slot++, getIconWithItemStack(item));
             }
         }
         gui.setItem(53, getQuitIcon());
         return gui;
     }
     
-    private ItemStack getIcon(Item item) {
-        if (item.getType().equals(ItemType.ITEM_STACK)) {
-            return getIconWithItemStack(item);
-        }
-        if (item.getType().equals(ItemType.ITEM_CMD)) {
-            return getIconWithCmdItem(item);
-        }
-        
-        return null;
-    }
-    
     private ItemStack getIconWithItemStack(Item item) {
         ItemStack icon = ItemManager.
                 getItem(item.getSortId(), item.getItemId()).clone();
-        addPriceLore(icon, item.getId(), item.getPrice());
-        return icon;
-    }
-    
-    private ItemStack getIconWithCmdItem(Item item) {
-        ItemStack icon = new ItemStack(Material.REDSTONE, 1);
         addPriceLore(icon, item.getId(), item.getPrice());
         return icon;
     }

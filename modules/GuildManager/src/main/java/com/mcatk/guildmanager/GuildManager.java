@@ -6,7 +6,6 @@ import com.mcatk.guildmanager.core.repository.jdbc.JdbcGuildRepository;
 import com.mcatk.guildmanager.core.service.GuildService;
 import com.mcatk.guildmanager.models.Guild;
 import com.mcatk.guildmanager.papi.GuildPapi;
-import com.mcatk.guildmanager.sql.SQLUpdater;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 
@@ -40,7 +39,7 @@ public final class GuildManager extends JavaPlugin {
         registerDependency();
         registerCommand();
         registerListener();
-        new SQLUpdater().run();
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::refreshCache, 0L, 20L * 60L);
         getLogger().info("公会管理插件已启动");
     }
 
@@ -128,6 +127,14 @@ public final class GuildManager extends JavaPlugin {
                 if (isEnabled()) scheduler.runTask(this, () -> failure.accept(e));
             }
         });
+    }
+
+    public void refreshCache() {
+        try {
+            guildService.refresh();
+        } catch (RuntimeException e) {
+            getLogger().log(java.util.logging.Level.WARNING, "Guild cache refresh failed; retaining previous snapshot", e);
+        }
     }
 
     private void initGuildService() {

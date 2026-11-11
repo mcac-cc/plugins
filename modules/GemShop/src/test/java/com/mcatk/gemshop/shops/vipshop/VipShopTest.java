@@ -49,10 +49,10 @@ public class VipShopTest {
         shopStatic.when(GemShop::getPlugin).thenReturn(shop);
         when(shop.getPurchases()).thenReturn(purchases);
         doAnswer(call -> {
-            BooleanSupplier eligible = call.getArgument(2), deliver = call.getArgument(3);
+            BooleanSupplier eligible = call.getArgument(3), deliver = call.getArgument(4);
             if (eligible.getAsBoolean()) deliver.getAsBoolean();
             return null;
-        }).when(purchases).buy(any(), anyInt(), any(), any());
+        }).when(purchases).buy(any(), anyInt(), any(), any(), any());
 
         gemMockedStatic.when(Gem::getPlugin).thenReturn(gemPlugin);
         when(gemPlugin.getGemExecutor()).thenReturn(gemExecutor);

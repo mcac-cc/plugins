@@ -30,9 +30,11 @@ public final class Purchases implements AutoCloseable {
         final UUID playerId;
         final String name;
         final int price;
+        final Product product;
         volatile boolean charged, debitStarted, debitKnown;
         final AtomicBoolean settled = new AtomicBoolean();
-        Request(Player player, int price) {
+        Request(Player player, int price, Product product) {
+            this.product = product;
             this.player = player; this.playerId = player.getUniqueId(); this.name = player.getName(); this.price = price;
         }
     }
@@ -59,14 +61,14 @@ public final class Purchases implements AutoCloseable {
         }
     }
 
-    public void buy(Player player, int price, BooleanSupplier eligible, BooleanSupplier deliver) {
+    public void buy(Player player, int price, Product product, BooleanSupplier eligible, BooleanSupplier deliver) {
         if (closing || !player.isOnline()) return;
         if (!gems.isReady()) { player.sendMessage("§e宝石服务正在初始化，请稍候，未扣款"); return; }
         if (price <= 0 || !eligible.getAsBoolean()) return;
         if (unresolved.contains(player.getName().toLowerCase(Locale.ROOT))) {
             player.sendMessage("§c你有一笔待核对交易，请联系管理员"); return;
         }
-        Request request = new Request(player, price);
+        Request request = new Request(player, price, product);
         if (pending.size() >= 16 || pending.putIfAbsent(request.playerId, request) != null) {
             player.sendMessage("§e交易处理中，请稍候"); return;
         }
@@ -116,6 +118,7 @@ public final class Purchases implements AutoCloseable {
     private void write(Request request, String state) throws IOException {
         Files.createDirectories(receipts);
         Properties record = new Properties();
+        request.product.writeTo(record);
         record.setProperty("player", request.name); record.setProperty("amount", Integer.toString(request.price));
         record.setProperty("state", state); record.setProperty("id", request.id);
         Path temp = receipts.resolve(request.id + ".tmp");
