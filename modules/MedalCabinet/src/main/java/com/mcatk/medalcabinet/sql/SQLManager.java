@@ -98,7 +98,7 @@ public class SQLManager {
             ps.setString(4, medalDes);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Medal database write failed", e);
         }
     }
 
@@ -139,7 +139,7 @@ public class SQLManager {
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Medal database write failed", e);
         }
     }
 
@@ -159,7 +159,7 @@ public class SQLManager {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Medal database read failed", e);
         }
         return list;
     }
@@ -181,7 +181,7 @@ public class SQLManager {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Medal database read failed", e);
         }
         return medal;
     }
@@ -204,7 +204,7 @@ public class SQLManager {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Medal database read failed", e);
         }
         return list;
     }
@@ -259,7 +259,16 @@ public class SQLManager {
         return medal;
     }
 
-    public synchronized void clearCache(String playerID) {
+    public Medal peekMainMedal(String playerID) {
+        Medal medal = mainMedalCache.get(playerID);
+        return medal == EMPTY_MEDAL ? null : medal;
+    }
+
+    public boolean isMainMedalCached(String playerID) {
+        return mainMedalCache.containsKey(playerID);
+    }
+
+    public void clearCache(String playerID) {
         mainMedalCache.remove(playerID);
     }
 

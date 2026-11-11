@@ -16,6 +16,7 @@ public class MySQLManager {
     private Connection connection;
     private int port;
     private boolean enabled;
+    private volatile boolean ready;
     private static final MySQLManager INSTANCE = new MySQLManager();
 
     public static MySQLManager getInstance() {
@@ -31,12 +32,16 @@ public class MySQLManager {
         enabled = true;
         try {
             getConnection();
+            ready = true;
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to connect to the Gem database", e);
         }
     }
 
+    public boolean isReady() { return ready; }
+
     public synchronized void shutdown() {
+        ready = false;
         enabled = false;
         closeConnection();
     }
@@ -198,4 +203,40 @@ public class MySQLManager {
         }
     }
 
+    public synchronized void addGems(String name, int amount) {
+        if (amount <= 0) throw new IllegalArgumentException("gems must be positive");
+        try (PreparedStatement ps = getConnection().prepareStatement(
+                "INSERT INTO gem (username,gems,total) VALUES (?,?,?) "
+                        + "ON DUPLICATE KEY UPDATE gems=COALESCE(gems,0)+VALUES(gems), total=COALESCE(total,0)+VALUES(total)")) {
+            ps.setString(1, name);
+            ps.setInt(2, amount);
+            ps.setInt(3, amount);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Gem database operation failed", e);
+        }
+    }
+
+    public synchronized void upsertGems(String name, int amount) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
+                "INSERT INTO gem (username,gems) VALUES (?,?) ON DUPLICATE KEY UPDATE gems=VALUES(gems)")) {
+            ps.setString(1, name);
+            ps.setInt(2, amount);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Gem database operation failed", e);
+        }
+    }
+
+    public synchronized boolean refundGems(String name, int amount) {
+        if (amount <= 0) throw new IllegalArgumentException("gems must be positive");
+        try (PreparedStatement ps = getConnection().prepareStatement(
+                "UPDATE gem SET gems=COALESCE(gems,0)+? WHERE username=?")) {
+            ps.setInt(1, amount);
+            ps.setString(2, name);
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Gem refund failed; reconcile before retrying", e);
+        }
+    }
 }

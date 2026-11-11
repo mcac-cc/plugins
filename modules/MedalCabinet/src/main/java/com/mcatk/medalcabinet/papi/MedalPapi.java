@@ -1,6 +1,7 @@
 package com.mcatk.medalcabinet.papi;
 
 import com.mcatk.medalcabinet.medal.Medal;
+import com.mcatk.medalcabinet.MedalCabinet;
 import com.mcatk.medalcabinet.sql.SQLManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
@@ -30,7 +31,9 @@ public class MedalPapi extends PlaceholderExpansion {
             return "";
         }
 
-        Medal medal = SQLManager.getInstance().getMainMedal(player.getName());
+        String name = player.getName();
+        MedalCabinet.getPlugin().requestTitle(name);
+        Medal medal = SQLManager.getInstance().peekMainMedal(name);
         if (medal != null) {
             return medal.toString();
         } else {

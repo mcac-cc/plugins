@@ -4,7 +4,9 @@ import com.mcatk.gem.sql.MySQLManager;
 
 import java.sql.SQLException;
 
+/** Blocking database API. Invoke from a worker; Bukkit callers use Gem.queryAsync. */
 public class GemExecutor {
+    public boolean isReady() { return MySQLManager.getInstance().isReady(); }
     private static void requirePositiveAmount(int amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("gems must be positive");
@@ -21,10 +23,8 @@ public class GemExecutor {
 
     public void setGems(String name, int gems) {
         requirePositiveAmount(gems);
-        if (MySQLManager.getInstance().getGems(name) == null) {
-            MySQLManager.getInstance().insertData(name);
-        }
-        MySQLManager.getInstance().setGems(name, gems);
+        MySQLManager.getInstance().upsertGems(name, gems);
+        Gem.getPlugin().invalidateBalance(name);
         Gem.getPlugin().log(name + "宝石设置为" + gems);
     }
 
@@ -34,6 +34,7 @@ public class GemExecutor {
             return false;
         }
         if (MySQLManager.getInstance().reduceGems(name, gems)) {
+            Gem.getPlugin().invalidateBalance(name);
             Gem.getPlugin().log(name + "花费宝石" + gems);
             return true;
         }
@@ -50,22 +51,24 @@ public class GemExecutor {
 
     public void addGems(String name, int addGems) {
         requirePositiveAmount(addGems);
-        int[] data = MySQLManager.getInstance().getData(name);
-        if (data == null) {
-            MySQLManager.getInstance().insertData(name);
-            data = MySQLManager.getInstance().getData(name);
-            if (data == null) {
-                data = new int[]{0, 0};
-            }
-        }
-        int gems = data[0] + addGems;
-        int total = data[1] + addGems;
-        MySQLManager.getInstance().updateData(name, gems, total);
+        MySQLManager.getInstance().addGems(name, addGems);
+        Gem.getPlugin().invalidateBalance(name);
         Gem.getPlugin().log(name + "获得宝石" + addGems);
+    }
+
+    public boolean refundGems(String name, int gems) {
+        requirePositiveAmount(gems);
+        boolean refunded = MySQLManager.getInstance().refundGems(name, gems);
+        if (refunded) {
+            Gem.getPlugin().invalidateBalance(name);
+            Gem.getPlugin().log(name + "退回宝石" + gems);
+        }
+        return refunded;
     }
 
     public boolean deleteData(String name) {
         if (MySQLManager.getInstance().deleteData(name)) {
+            Gem.getPlugin().invalidateBalance(name);
             Gem.getPlugin().log(name + "宝石数据已删除");
             return true;
         }

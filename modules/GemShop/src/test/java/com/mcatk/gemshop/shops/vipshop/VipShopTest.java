@@ -3,6 +3,9 @@ package com.mcatk.gemshop.shops.vipshop;
 import com.mcatk.gem.Gem;
 import com.mcatk.gem.GemExecutor;
 import com.mcatk.gemshop.ServerCmd;
+import com.mcatk.gemshop.GemShop;
+import com.mcatk.gemshop.Purchases;
+import java.util.function.BooleanSupplier;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.junit.After;
@@ -27,6 +30,8 @@ public class VipShopTest {
     private GemExecutor gemExecutor;
     private Player player;
     private Logger logger;
+    private MockedStatic<GemShop> shopStatic;
+    private Purchases purchases;
 
     @Before
     public void setUp() {
@@ -38,6 +43,16 @@ public class VipShopTest {
         gemExecutor = mock(GemExecutor.class);
         player = mock(Player.class);
         logger = mock(Logger.class);
+        shopStatic = mockStatic(GemShop.class);
+        GemShop shop = mock(GemShop.class);
+        purchases = mock(Purchases.class);
+        shopStatic.when(GemShop::getPlugin).thenReturn(shop);
+        when(shop.getPurchases()).thenReturn(purchases);
+        doAnswer(call -> {
+            BooleanSupplier eligible = call.getArgument(2), deliver = call.getArgument(3);
+            if (eligible.getAsBoolean()) deliver.getAsBoolean();
+            return null;
+        }).when(purchases).buy(any(), anyInt(), any(), any());
 
         gemMockedStatic.when(Gem::getPlugin).thenReturn(gemPlugin);
         when(gemPlugin.getGemExecutor()).thenReturn(gemExecutor);
@@ -49,6 +64,7 @@ public class VipShopTest {
 
     @After
     public void tearDown() {
+        shopStatic.close();
         gemMockedStatic.close();
         serverCmdMockedStatic.close();
         bukkitMockedStatic.close();

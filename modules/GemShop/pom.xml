@@ -73,6 +73,7 @@
         <dependency>
             <groupId>com.mcatk</groupId>
             <artifactId>Gem</artifactId>
+            <scope>provided</scope>
             <type>jar</type>
             <version>1.0.0</version>
         </dependency>

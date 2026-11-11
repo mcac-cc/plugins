@@ -43,44 +43,21 @@ public class GemExecutorTest {
     }
 
     @Test
-    public void testAddGemsOptimized() {
-        GemExecutor executor = new GemExecutor();
-        String playerName = "TestPlayer";
-        int amount = 100;
-        int currentGems = 50;
-        int currentTotal = 1000;
-
-        // Setup mock behavior for the new getData method
-        when(mySQLManager.getData(playerName)).thenReturn(new int[]{currentGems, currentTotal});
-
-        // Execute
-        executor.addGems(playerName, amount);
-
-        // Verify that the new efficient methods are called
-        verify(mySQLManager, times(1)).getData(playerName);
-        verify(mySQLManager, times(1)).updateData(playerName, currentGems + amount, currentTotal + amount);
-        verify(mySQLManager, never()).insertData(playerName);
-
-        // Verify that the old inefficient methods are NOT called
-        verify(mySQLManager, never()).getGems(playerName);
-        verify(mySQLManager, never()).getTotal(playerName);
-        verify(mySQLManager, never()).setGems(anyString(), anyInt());
-        verify(mySQLManager, never()).setTotal(anyString(), anyInt());
+    public void addUsesOneAtomicUpsertWithoutReadModifyWrite() {
+        new GemExecutor().addGems("TestPlayer", 100);
+        verify(mySQLManager).addGems("TestPlayer", 100);
+        verify(mySQLManager, never()).getData(anyString());
+        verify(mySQLManager, never()).insertData(anyString());
+        verify(mySQLManager, never()).updateData(anyString(), anyInt(), anyInt());
     }
 
     @Test
-    public void testAddGemsWhenDataMissing() {
-        GemExecutor executor = new GemExecutor();
-        String playerName = "TestPlayer";
-        int amount = 20;
-
-        when(mySQLManager.getData(playerName)).thenReturn(null, new int[]{5, 10});
-
-        executor.addGems(playerName, amount);
-
-        verify(mySQLManager, times(2)).getData(playerName);
-        verify(mySQLManager, times(1)).insertData(playerName);
-        verify(mySQLManager, times(1)).updateData(playerName, 25, 30);
+    public void refundDoesNotCountAsANewLifetimeAward() {
+        when(mySQLManager.refundGems("TestPlayer", 20)).thenReturn(true);
+        assertTrue(new GemExecutor().refundGems("TestPlayer", 20));
+        verify(mySQLManager).refundGems("TestPlayer", 20);
+        verify(mySQLManager, never()).addGems(anyString(), anyInt());
+        verify(mySQLManager, never()).setTotal(anyString(), anyInt());
     }
 
     @Test
@@ -128,7 +105,7 @@ public class GemExecutorTest {
     }
     @Test
     public void databaseReadFailureDoesNotCreateOrOverwriteBalance() {
-        when(mySQLManager.getData("TestPlayer")).thenThrow(new IllegalStateException("Database unavailable"));
+        doThrow(new IllegalStateException("Database unavailable")).when(mySQLManager).addGems("TestPlayer", 20);
 
         assertThrows(IllegalStateException.class, () -> new GemExecutor().addGems("TestPlayer", 20));
 

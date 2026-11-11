@@ -10,6 +10,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -82,6 +83,7 @@ public class GuildGUI implements Listener {
     public void onInventoryClick(InventoryClickEvent e) {
         if (!e.getInventory().equals(gui)) return;
         e.setCancelled(true);
+        if (e.getRawSlot() < 0 || e.getRawSlot() >= gui.getSize()) return;
         ItemStack clickedItem = e.getCurrentItem();
         if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
         if (clickedItem.equals(back)) {
@@ -97,6 +99,12 @@ public class GuildGUI implements Listener {
     public void onInventoryClose(InventoryCloseEvent e) {
         if (e.getInventory().equals(gui)) {
             HandlerList.unregisterAll(this);
+        }
+    }
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (event.getInventory().equals(gui) && event.getRawSlots().stream().anyMatch(slot -> slot < gui.getSize())) {
+            event.setCancelled(true);
         }
     }
 }

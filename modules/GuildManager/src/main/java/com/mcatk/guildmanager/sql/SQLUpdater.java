@@ -5,10 +5,16 @@ import org.bukkit.Bukkit;
 
 public class SQLUpdater {
     public void run() {
-        Bukkit.getScheduler().runTaskTimer(
+        Bukkit.getScheduler().runTaskTimerAsynchronously(
                 GuildManager.getPlugin(),
-                () -> GuildManager.getPlugin().getGuildService().refresh(),
-                20L * 60L,
+                () -> {
+                    try { GuildManager.getPlugin().getGuildService().refresh(); }
+                    catch (RuntimeException e) {
+                        GuildManager.getPlugin().getLogger().log(java.util.logging.Level.WARNING,
+                                "Guild cache refresh failed; retaining previous snapshot", e);
+                    }
+                },
+                0L,
                 20L * 60L
         );
     }

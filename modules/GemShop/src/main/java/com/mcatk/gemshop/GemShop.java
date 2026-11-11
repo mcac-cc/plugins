@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 public final class GemShop extends JavaPlugin {
     private static GemShop plugin;
     private ShopFactory shopFactory;
+    private Purchases purchases;
     private ExecutorService configSaveExecutor;
     
     public static GemShop getPlugin() {
@@ -46,6 +47,7 @@ public final class GemShop extends JavaPlugin {
                 return t;
             }
         });
+        purchases = new Purchases(this);
         shopFactory = new ShopFactory();
         Bukkit.getPluginCommand("gemshop").
                 setExecutor(new CommandGemShop());
@@ -58,6 +60,7 @@ public final class GemShop extends JavaPlugin {
     
     @Override
     public void onDisable() {
+        if (purchases != null) purchases.close();
         if (configSaveExecutor != null) {
             configSaveExecutor.shutdown();
             try {
@@ -72,6 +75,10 @@ public final class GemShop extends JavaPlugin {
         log("GemShop已关闭");
     }
     
+    public Purchases getPurchases() {
+        return purchases;
+    }
+
     public void saveConfigAsync() {
         String configData = getConfig().saveToString();
         configSaveExecutor.submit(() -> {

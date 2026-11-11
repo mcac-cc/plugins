@@ -39,9 +39,10 @@ public class GemPapi extends PlaceholderExpansion {
     
     @Override
     public String onPlaceholderRequest(Player p, String params) {
+        if (p == null) return "0";
         switch (params) {
             case "gems":
-                return String.valueOf(Gem.getPlugin().getGemExecutor().getGems(p.getName()));
+                return String.valueOf(plugin.cachedBalance(p.getName()));
             default:
         }
         return null;

@@ -39,7 +39,7 @@ public class GuildPapi extends PlaceholderExpansion {
 
     @Override
     public String onRequest(OfflinePlayer player, @NotNull String identifier) {
-        if (player == null) {
+        if (player == null || !GuildManager.getPlugin().getGuildService().isReady()) {
             return "";
         }
         Guild guild = GuildManager.getPlugin().getGuildService().getPlayerGuild(player.getName());
@@ -56,7 +56,7 @@ public class GuildPapi extends PlaceholderExpansion {
         if (identifier.equals("prefix")) {
             if (guild.getChairman().equals(player.getName())) {
                 return "§7[" + guild.getGuildName() + "§f|§4" + "会长" + "§7]&r";
-            } else if (guild.getViceChairman1().equals(player.getName()) || guild.getViceChairman2().equals(player.getName())) {
+            } else if (player.getName().equals(guild.getViceChairman1()) || player.getName().equals(guild.getViceChairman2())) {
                 return "§7[" + guild.getGuildName() + "§f|§c" + "副会长" + "§7]&r";
             } else {
                 return "§7[" + guild.getGuildName() + "§7]&r";
@@ -86,7 +86,7 @@ public class GuildPapi extends PlaceholderExpansion {
         //玩家的相关变量
         Member member = GuildManager.getPlugin().getGuildService().getMember(player.getName());
         if (identifier.equals("contribution")) {
-            return Integer.toString(member.getContribution());
+            return member == null ? "0" : Integer.toString(member.getContribution());
         }
         return null;
     }

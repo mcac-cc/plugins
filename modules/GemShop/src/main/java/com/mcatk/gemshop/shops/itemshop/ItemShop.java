@@ -1,12 +1,11 @@
 package com.mcatk.gemshop.shops.itemshop;
 
-import com.mcatk.gem.Gem;
 import com.mcatk.gemshop.GemShop;
 import com.mcatk.gemshop.Message;
-import org.apache.commons.lang.text.StrBuilder;
+import com.mcatk.gemshop.InventoryDelivery;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 
@@ -25,29 +24,25 @@ public class ItemShop {
     }
     
     public void buyItem(Player player, String shopId, String itemId) {
-//        new BukkitRunnable() {
-//            @Override
-//            public void run() {
-                Items items = itemsMap.get(shopId);
-                if (items == null) {
-                    player.sendMessage(Message.ERROR + "无该分类");
-                    return;
-                }
-                Item item = items.getMap().get(itemId);
-                if (item == null) {
-                    player.sendMessage(Message.ERROR + "无该商品");
-                    return;
-                }
-                if (Gem.getPlugin().getGemExecutor().takeGems(player.getName(), item.getPrice())) {
-                    player.getInventory().addItem(item.getItemStack());
-                    player.sendMessage(Message.INFO + "购买成功");
-                } else {
-                    player.sendMessage(Message.INFO + "宝石不足");
-                }
-//            }
-//        }.runTaskAsynchronously(Gem.getPlugin());
+        Items items = itemsMap.get(shopId);
+        if (items == null) {
+            player.sendMessage(Message.ERROR + "无该分类");
+            return;
+        }
+        Item item = items.getMap().get(itemId);
+        if (item == null) {
+            player.sendMessage(Message.ERROR + "无该商品");
+            return;
+        }
+        ItemStack delivery = item.getItemStack().clone();
+        GemShop.getPlugin().getPurchases().buy(player, item.getPrice(), () -> {
+            boolean fits = InventoryDelivery.canFit(player.getInventory(), delivery);
+            if (!fits) player.sendMessage("§c背包空间不足");
+            return fits;
+        }, () -> InventoryDelivery.deliver(player.getInventory(), delivery));
     }
     
+
     public void addItem(Player player, String shopId, String itemId, String price) {
         Item item = new Item(itemId, player.getInventory().getItemInMainHand(),
                 Integer.parseInt(price));
