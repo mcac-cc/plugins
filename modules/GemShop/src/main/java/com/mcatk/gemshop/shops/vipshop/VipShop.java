@@ -1,6 +1,7 @@
 package com.mcatk.gemshop.shops.vipshop;
 
 import com.mcatk.gemshop.GemShop;
+import com.mcatk.gemshop.Product;
 import com.mcatk.gemshop.Message;
 import com.mcatk.gemshop.ServerCmd;
 import org.bukkit.entity.Player;
@@ -12,14 +13,15 @@ public class VipShop {
             player.sendMessage(Message.ERROR + "无效的VIP类型");
             return;
         }
-        GemShop.getPlugin().getPurchases().buy(player, price, () -> {
+        String duration = "30d";
+        GemShop.getPlugin().getPurchases().buy(player, price, Product.vip(vipType, duration), () -> {
             if (player.hasPermission("cmi.command.se")) {
                 player.sendMessage(Message.INFO + "已拥有VIP");
                 return false;
             }
             return true;
         }, () -> ServerCmd.sendConsoleCmd(String.format(
-                "lp user %s parent addtemp %s 30d", player.getName(), vipType)));
+                "lp user %s parent addtemp %s %s", player.getName(), vipType, duration)));
     }
 
     private int getPrice(String vipType) {

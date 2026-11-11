@@ -44,52 +44,58 @@ public class PurchasesTest {
         try(java.util.stream.Stream<Path> files=Files.list(directory)) {
             for(Path path:(Iterable<Path>)files::iterator) if(path.toString().endsWith(".properties")) {
                 Properties p=new Properties();try(java.io.InputStream in=Files.newInputStream(path)){p.load(in);}
-                if(state.equals(p.getProperty("state")))return true;
+                if (state.equals(p.getProperty("state"))) {
+                    assertEquals("item", p.getProperty("category"));
+                    assertEquals("summer", p.getProperty("shop"));
+                    assertEquals("ticket", p.getProperty("product"));
+                    assertEquals("3", p.getProperty("quantity"));
+                    return true;
+                }
             }
         }return false;
     }
     @Test public void failedCapacityCheckNeverCharges() {
-        purchases.buy(player,10,()->false,()->{fail("delivery must not run");return false;});
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->false,()->{fail("delivery must not run");return false;});
         purchases.close(); verify(gems,never()).takeGems(anyString(),anyInt());
     }
     @Test public void inventoryChangingWhileSqlRunsRefundsOnceWithoutLifetimeAward() throws Exception {
         AtomicBoolean fits=new AtomicBoolean(true);
-        purchases.buy(player,10,fits::get,()->{fail("delivery must not run");return false;});
+        purchases.buy(player,10,Product.item("summer","ticket",3),fits::get,()->{fail("delivery must not run");return false;});
         fits.set(false); next(); purchases.close();
         verify(gems).takeGems("Alice",10); verify(gems).refundGems("Alice",10);
         verify(gems,never()).addGems(anyString(),anyInt()); assertFalse(receipt("REFUND_PENDING"));
     }
     @Test public void successfulDeliveryRunsOnMainAndDoesNotRefund() throws Exception {
-        purchases.buy(player,10,()->true,()->{assertSame(owner,Thread.currentThread());return true;});
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->{assertSame(owner,Thread.currentThread());return true;});
         next(); purchases.close(); verify(gems,never()).refundGems(anyString(),anyInt());
         verify(player).sendMessage("§a购买成功");
     }
     @Test public void disconnectBeforeDeliveryRefunds() throws Exception {
-        purchases.buy(player,10,()->true,()->{fail("offline delivery");return true;});
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->{fail("offline delivery");return true;});
         when(player.isOnline()).thenReturn(false); next(); purchases.close(); verify(gems).refundGems("Alice",10);
     }
     @Test public void shutdownBeforeTheMainCallbackRefundsAndLateCallbackCannotDeliver() throws Exception {
         AtomicBoolean delivered=new AtomicBoolean();
-        purchases.buy(player,10,()->true,()->{delivered.set(true);return true;});
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->{delivered.set(true);return true;});
         Runnable callback=main.poll(5,TimeUnit.SECONDS); assertNotNull(callback);
         purchases.close(); callback.run();
         assertFalse(delivered.get()); verify(gems).refundGems("Alice",10);
     }
     @Test public void concurrentClicksCannotChargeTwice() throws Exception {
-        purchases.buy(player,10,()->true,()->true);
-        purchases.buy(player,10,()->true,()->true);
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->true);
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->true);
         next(); purchases.close(); verify(gems).takeGems("Alice",10);
     }
     @Test public void ambiguousDebitKeepsReceiptAndIsNotBlindlyRefundedOrRetried() throws Exception {
         doThrow(new IllegalStateException("Lost reply after debit")).when(gems).takeGems("Alice",10);
-        purchases.buy(player,10,()->true,()->true); next(); purchases.close();
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->true); next(); purchases.close();
         assertTrue(receipt("DEBIT_UNKNOWN")); verify(gems,never()).refundGems(anyString(),anyInt());
         purchases=new Purchases(plugin,gems);
-        purchases.buy(player,10,()->true,()->true); purchases.close(); verify(gems).takeGems("Alice",10);
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->true); purchases.close(); verify(gems).takeGems("Alice",10);
     }
     @Test public void failedRefundRetainsReceiptInsteadOfReportingSuccess() throws Exception {
         doReturn(false).when(gems).refundGems("Alice",10);
-        purchases.buy(player,10,()->true,()->false); next(); purchases.close();
+        purchases.buy(player,10,Product.item("summer","ticket",3),()->true,()->false); next(); purchases.close();
         assertTrue(receipt("REFUND_UNKNOWN")); verify(gems).refundGems("Alice",10);
         verify(player,never()).sendMessage("§a购买成功");
     }

@@ -4,7 +4,6 @@ import com.mcatk.guildmanager.GuildManager;
 import com.mcatk.guildmanager.Msg;
 import com.mcatk.guildmanager.core.service.GuildService;
 import com.mcatk.guildmanager.gui.GuildsGUI;
-import com.mcatk.guildmanager.models.ApplicantsList;
 import com.mcatk.guildmanager.models.Guild;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -17,13 +16,17 @@ public class GuildCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("/gmg gui | apply <ID> | create <ID> | quit | offer <AC点>");
+            sender.sendMessage("/gmg gui | create <ID> | quit | offer <AC点>");
             return true;
         }
         if (!(sender instanceof Player)) {
             sender.sendMessage("该指令只能由玩家执行"); return true;
         }
         Player player = (Player) sender;
+        if ("apply".equalsIgnoreCase(args[0])) {
+            player.sendMessage("公会申请已关闭");
+            return true;
+        }
         GuildManager plugin = GuildManager.getPlugin();
         GuildService service = plugin.getGuildService();
         if (!service.isReady()) {
@@ -34,16 +37,6 @@ public class GuildCommand implements CommandExecutor {
         Guild guild = service.getPlayerGuild(name);
         switch (action) {
             case "gui": new GuildsGUI().openGUI(player); return true;
-            case "apply":
-                if (args.length != 2) break;
-                if (guild != null) { player.sendMessage(Msg.ERROR + "已有公会"); return true; }
-                String target = args[1];
-                if (service.getGuild(target) == null) { player.sendMessage(Msg.ERROR + "不存在公会"); return true; }
-                if (ApplicantsList.getApplicantsList().getList(target).contains(name)) {
-                    player.sendMessage(Msg.ERROR + "今天已经申请过公会，明天再试"); return true;
-                }
-                ApplicantsList.getApplicantsList().getList(target).add(name);
-                player.sendMessage(Msg.INFO + "申请成功，等待通过"); return true;
             case "create":
                 if (args.length != 2) break;
                 String id = args[1];
@@ -70,11 +63,29 @@ public class GuildCommand implements CommandExecutor {
                 if (guild.isManager(name)) { player.sendMessage("请先撤销你的公会职务"); return true; }
                 String oldGuild = guild.getId();
                 plugin.queryAsync(() -> {
-                    service.removeMember(name, oldGuild); service.refresh(); return true;
-                }, ignored -> {
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "res pset main.gh " + name + " move remove");
-                    if (player.isOnline()) player.sendMessage("§a已退出公会");
-                }, error -> { if (player.isOnline()) player.sendMessage("§c操作失败，请稍后核对公会状态"); });
+                    boolean removed = service.removeMember(name, oldGuild);
+                    if (removed) plugin.getLogger().info("Guild quit " + oldGuild + "/" + name + ": Residence cleanup pending");
+                    return removed;
+                }, removed -> {
+                    if (removed) {
+                        String commandText = "res pset main.gh " + name + " move remove";
+                        try {
+                            if (Bukkit.dispatchCommand(Bukkit.getConsoleSender(), commandText)) {
+                                plugin.getLogger().info("Residence cleanup dispatched for " + oldGuild + "/" + name);
+                            } else {
+                                plugin.getLogger().warning("Residence cleanup requires review: " + commandText);
+                            }
+                        } catch (RuntimeException error) {
+                            plugin.getLogger().log(java.util.logging.Level.WARNING,
+                                    "Residence cleanup requires review: " + commandText, error);
+                        }
+                    }
+                    if (player.isOnline()) player.sendMessage(removed ? "§a已退出公会" : "公会成员记录已变更");
+                    Bukkit.getScheduler().runTaskAsynchronously(plugin, plugin::refreshCache);
+                }, error -> {
+                    plugin.getLogger().warning("Check guild membership and Residence permissions for " + oldGuild + "/" + name);
+                    if (player.isOnline()) player.sendMessage("§c请稍后核对公会状态");
+                });
                 return true;
             default:
         }

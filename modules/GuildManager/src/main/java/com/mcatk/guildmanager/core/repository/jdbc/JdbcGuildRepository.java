@@ -176,11 +176,16 @@ public class JdbcGuildRepository implements GuildRepository, AutoCloseable {
     }
 
     @Override
-    public synchronized void removeMember(String playerId, String guildId) {
-        try (PreparedStatement ps = getConnection().prepareStatement("DELETE FROM player_guild WHERE player_id=? AND guild_id=?")) {
+    public synchronized boolean removeMember(String playerId, String guildId) {
+        String sql = "DELETE FROM player_guild WHERE player_id=? AND guild_id=? " +
+                "AND NOT EXISTS (SELECT 1 FROM guild WHERE guild_id=? " +
+                "AND (? = guild_chairman OR ? = guild_vice_chairman_1 OR ? = guild_vice_chairman_2))";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, playerId);
             ps.setString(2, guildId);
-            ps.executeUpdate();
+            ps.setString(3, guildId);
+            for (int i = 4; i <= 6; i++) ps.setString(i, playerId);
+            return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             throw new IllegalStateException("GuildManager database operation failed", e);
         }

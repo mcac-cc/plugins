@@ -1,6 +1,7 @@
 package com.mcatk.gemshop.shops.itemshop;
 
 import com.mcatk.gemshop.GemShop;
+import com.mcatk.gemshop.Product;
 import com.mcatk.gemshop.Message;
 import com.mcatk.gemshop.InventoryDelivery;
 import org.bukkit.inventory.ItemStack;
@@ -35,7 +36,7 @@ public class ItemShop {
             return;
         }
         ItemStack delivery = item.getItemStack().clone();
-        GemShop.getPlugin().getPurchases().buy(player, item.getPrice(), () -> {
+        GemShop.getPlugin().getPurchases().buy(player, item.getPrice(), Product.item(shopId, itemId, delivery.getAmount()), () -> {
             boolean fits = InventoryDelivery.canFit(player.getInventory(), delivery);
             if (!fits) player.sendMessage("§c背包空间不足");
             return fits;
