@@ -91,4 +91,26 @@ public class CommandGemShopTest {
             verify(sender).openInventory(inventory);
         }
     }
+
+    @Test
+    public void opensExactCategoryAndStillAcceptsUppercaseForLowercaseKeys() {
+        Player player = mock(Player.class);
+        GemShop plugin = mock(GemShop.class);
+        ShopFactory factory = mock(ShopFactory.class);
+        ItemShop shop = mock(ItemShop.class);
+        Items exact = mock(Items.class);
+        Items lowercase = mock(Items.class);
+        when(plugin.getShopFactory()).thenReturn(factory);
+        when(factory.getItemShop()).thenReturn(shop);
+        when(shop.getItems("Tools")).thenReturn(exact);
+        when(shop.getItems("tools")).thenReturn(lowercase);
+        try (MockedConstruction<ItemShopGui> menus = mockConstruction(ItemShopGui.class,
+                     (menu, call) -> assertSame(call.getCount() == 1 ? exact : lowercase, call.arguments().get(0)))) {
+            gemShopStatic.when(GemShop::getPlugin).thenReturn(plugin);
+            CommandGemShop command = new CommandGemShop();
+            command.onCommand(player, null, "gemshop", new String[]{"item", "Tools"});
+            command.onCommand(player, null, "gemshop", new String[]{"item", "TOOLS"});
+            org.junit.Assert.assertEquals(2, menus.constructed().size());
+        }
+    }
 }
