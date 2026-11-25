@@ -23,6 +23,7 @@ import java.util.Locale;
 
 public class MedalsGui implements Listener {
 
+    private static final int BACK_SLOT = 53;
     private final Inventory gui;
     private final ItemStack back;
     private boolean updating;
@@ -31,7 +32,7 @@ public class MedalsGui implements Listener {
     public MedalsGui(String playerID, List<Medal> medals) {
         gui = Bukkit.createInventory(null, 54, playerID + " §6的勋章墙");
         for (Medal medal : medals) {
-            if (gui.firstEmpty() < 0 || gui.firstEmpty() >= 53) break;
+            if (gui.firstEmpty() < 0 || gui.firstEmpty() >= BACK_SLOT) break;
             ItemStack icon = getIcon(medal);
             gui.addItem(icon);
             iconMap.put(icon, medal);
@@ -44,7 +45,7 @@ public class MedalsGui implements Listener {
         lore.add("\u00a77点击返回主菜单");
         meta.setLore(lore);
         back.setItemMeta(meta);
-        gui.setItem(53, back);
+        gui.setItem(BACK_SLOT, back);
         Bukkit.getPluginManager().registerEvents(this, MedalCabinet.getPlugin());
     }
 
@@ -85,9 +86,7 @@ public class MedalsGui implements Listener {
         ItemStack clickedItem = e.getCurrentItem();
         if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
 
-        if (clickedItem.hasItemMeta() &&
-            clickedItem.getItemMeta().hasDisplayName() &&
-            clickedItem.getItemMeta().getDisplayName().endsWith("返回")) {
+        if (e.getRawSlot() == BACK_SLOT) {
             ((Player) e.getWhoClicked()).chat("/menu");
             return;
         }
