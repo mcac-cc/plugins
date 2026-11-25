@@ -40,9 +40,46 @@ public class ItemManagerCommandTest {
             manager.when(ItemManager::getItemSort).thenReturn(reloaded);
             ItemStack stone = new ItemStack(Material.STONE);
             reloaded.addItem("tools", "stone", stone);
+            ItemStack saved = reloaded.getItem("tools", "stone");
+            assertEquals(Material.STONE, saved.getType());
             command.onCommand(sender, null, "im", new String[]{"create", "tools"});
-            assertEquals(stone, reloaded.getItem("tools", "stone"));
-            assertEquals(stone, restored.get("tools.stone"));
+            assertSame(saved, reloaded.getItem("tools", "stone"));
+            assertSame(saved, restored.get("tools.stone"));
+        }
+    }
+
+    @Test
+    public void loadedCatalogKeepsValidItemsAlongsideInvalidEntries() {
+        ItemManager plugin = mock(ItemManager.class);
+        YamlConfiguration config = new YamlConfiguration();
+        ItemStack valid = new ItemStack(Material.STONE);
+        config.set("tools.invalid", "stone");
+        config.set("tools.valid", valid);
+        when(plugin.getConfig()).thenReturn(config);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        try (MockedStatic<ItemManager> manager = mockStatic(ItemManager.class)) {
+            manager.when(ItemManager::getPlugin).thenReturn(plugin);
+            ItemSort catalog = new ItemSort();
+            assertNull(catalog.getItem("tools", "invalid"));
+            assertEquals(valid, catalog.getItem("tools", "valid"));
+            assertEquals("stone", config.get("tools.invalid"));
+        }
+    }
+
+    @Test
+    public void savedTemplateKeepsItsOriginalAmountWhenTheHeldStackChanges() {
+        ItemManager plugin = mock(ItemManager.class);
+        YamlConfiguration config = new YamlConfiguration();
+        when(plugin.getConfig()).thenReturn(config);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        try (MockedStatic<ItemManager> manager = mockStatic(ItemManager.class)) {
+            manager.when(ItemManager::getPlugin).thenReturn(plugin);
+            ItemSort catalog = new ItemSort();
+            ItemStack held = new ItemStack(Material.STONE, 8);
+            catalog.addItem("tools", "stone", held);
+            held.setAmount(1);
+            assertEquals(8, catalog.getItem("tools", "stone").getAmount());
+            assertEquals(8, config.getItemStack("tools.stone").getAmount());
         }
     }
 

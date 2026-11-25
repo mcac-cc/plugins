@@ -16,7 +16,12 @@ public class Items {
                 ItemManager.getPlugin().getConfig().getConfigurationSection(id);
         if (cs != null) {
             for (String key : cs.getKeys(false)) {
-                itemStackHashMap.put(key, (ItemStack) cs.get(key));
+                ItemStack template = cs.getItemStack(key);
+                if (template == null) {
+                    ItemManager.getPlugin().getLogger().warning("忽略无效物品模板: " + cs.getCurrentPath() + "." + key);
+                    continue;
+                }
+                itemStackHashMap.put(key, template);
             }
         }
     }

@@ -33,8 +33,9 @@ public class ItemSort {
         if (!itemsHashMap.containsKey(id1)) {
             itemsHashMap.put(id1, new Items(id1));
         }
-        itemsHashMap.get(id1).getItemStackHashMap().put(id2, itemStack);
-        ItemManager.getPlugin().getConfig().set(id1 + "." + id2, itemStack);
+        ItemStack template = itemStack.clone();
+        itemsHashMap.get(id1).getItemStackHashMap().put(id2, template);
+        ItemManager.getPlugin().getConfig().set(id1 + "." + id2, template);
         ItemManager.getPlugin().saveConfig();
     }
 
