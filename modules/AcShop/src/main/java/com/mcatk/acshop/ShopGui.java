@@ -31,7 +31,10 @@ public class ShopGui {
             if (slot == 53) break;
             Item item = shop.getItemHashMap().get(key);
             if (item.getType() == ItemType.ITEM_STACK) {
-                gui.setItem(slot++, getIconWithItemStack(item));
+                ItemStack icon = getIconWithItemStack(item);
+                if (icon != null) {
+                    gui.setItem(slot++, icon);
+                }
             }
         }
         gui.setItem(53, getQuitIcon());
@@ -39,8 +42,11 @@ public class ShopGui {
     }
     
     private ItemStack getIconWithItemStack(Item item) {
-        ItemStack icon = ItemManager.
-                getItem(item.getSortId(), item.getItemId()).clone();
+        ItemStack template = ItemManager.getItem(item.getSortId(), item.getItemId());
+        if (template == null || template.getType() == Material.AIR || template.getAmount() <= 0) {
+            return null;
+        }
+        ItemStack icon = template.clone();
         addPriceLore(icon, item.getId(), item.getPrice());
         return icon;
     }
