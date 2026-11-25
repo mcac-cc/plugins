@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class ShopGui {
+    static final int BACK_SLOT = 53;
+
     
     private Shop shop;
     
@@ -28,7 +30,7 @@ public class ShopGui {
         Collections.sort(keySet);
         int slot = 0;
         for (String key : keySet) {
-            if (slot == 53) break;
+            if (slot == BACK_SLOT) break;
             Item item = shop.getItemHashMap().get(key);
             if (item.getType() == ItemType.ITEM_STACK) {
                 ItemStack icon = getIconWithItemStack(item);
@@ -37,7 +39,7 @@ public class ShopGui {
                 }
             }
         }
-        gui.setItem(53, getQuitIcon());
+        gui.setItem(BACK_SLOT, getQuitIcon());
         return gui;
     }
     

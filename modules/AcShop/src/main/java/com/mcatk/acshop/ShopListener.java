@@ -32,8 +32,7 @@ public class ShopListener implements Listener {
                     return;
                 }
 
-                if (icon.getItemMeta().hasDisplayName() &&
-                    icon.getItemMeta().getDisplayName().endsWith("返回")) {
+                if (event.getRawSlot() == ShopGui.BACK_SLOT) {
                     ((Player) event.getWhoClicked()).chat("/menu_shop");
                     return;
                 }

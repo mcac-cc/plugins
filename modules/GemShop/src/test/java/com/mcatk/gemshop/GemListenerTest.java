@@ -91,6 +91,8 @@ public class GemListenerTest {
             when(event.getCurrentItem()).thenReturn(itemStack);
             when(itemStack.hasItemMeta()).thenReturn(true);
             when(itemStack.getItemMeta()).thenReturn(itemMeta);
+            lenient().when(itemMeta.hasDisplayName()).thenReturn(true);
+            lenient().when(itemMeta.getDisplayName()).thenReturn("平安返回");
             when(itemMeta.getLore()).thenReturn(Collections.singletonList("ID:ore:gold"));
 
             // IMPORTANT: Simulate click in shop inventory (top inventory)
@@ -101,6 +103,9 @@ public class GemListenerTest {
 
             // Verify: buyItem SHOULD be called
             verify(itemShop, times(1)).buyItem(player, "tools-rare", "ore:gold");
+            when(event.getRawSlot()).thenReturn(53);
+            gemListener.onInventoryClick(event);
+            verify(player).chat("/gemshop");
         }
     }
 }

@@ -41,12 +41,17 @@ public class ShopListenerIdTest {
         when(click.getCurrentItem()).thenReturn(icon);
         when(icon.hasItemMeta()).thenReturn(true);
         when(icon.getItemMeta()).thenReturn(meta);
+        lenient().when(meta.hasDisplayName()).thenReturn(true);
+        lenient().when(meta.getDisplayName()).thenReturn("平安返回");
         when(meta.getLore()).thenReturn(Collections.singletonList("商品ID:ore:gold"));
         try (MockedStatic<AcShop> plugin = mockStatic(AcShop.class);
              MockedConstruction<Operation> purchases = mockConstruction(Operation.class)) {
             plugin.when(AcShop::getShops).thenReturn(shops);
             new ShopListener().onInventoryClick(click);
             verify(purchases.constructed().get(0)).buy(buyer, item);
+            when(click.getRawSlot()).thenReturn(53);
+            new ShopListener().onInventoryClick(click);
+            verify(buyer).chat("/menu_shop");
         }
     }
 }

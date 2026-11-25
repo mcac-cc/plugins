@@ -1,5 +1,6 @@
 package com.mcatk.gemshop;
 
+import com.mcatk.gemshop.shops.itemshop.ItemShopGui;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -32,7 +33,7 @@ public class GemListener implements Listener {
 
                 ItemMeta meta = icon.getItemMeta();
 
-                if (meta.hasDisplayName() && meta.getDisplayName().endsWith("返回")){
+                if (event.getRawSlot() == ItemShopGui.BACK_SLOT) {
                     ((Player) event.getWhoClicked()).chat("/gemshop");
                     return;
                 }

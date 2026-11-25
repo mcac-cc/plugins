@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class ItemShopGui {
+    public static final int BACK_SLOT = 53;
+
     private final Inventory gui;
     
     public ItemShopGui(Items items) {
@@ -17,7 +19,7 @@ public class ItemShopGui {
         for (Item i : new TreeMap<>(items.getMap()).values()) {
             gui.addItem(getIcon(i));
         }
-        gui.setItem(53,getQuitIcon());
+        gui.setItem(BACK_SLOT, getQuitIcon());
     }
     
     public Inventory getGui() {
