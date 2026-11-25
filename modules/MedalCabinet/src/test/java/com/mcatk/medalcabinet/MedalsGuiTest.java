@@ -1,5 +1,8 @@
 package com.mcatk.medalcabinet;
 
+import com.mcatk.medalcabinet.medal.Medal;
+import org.bukkit.Material;
+import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -32,6 +35,27 @@ class MedalsGuiTest {
             gui.onInventoryDrag(drag);verify(drag).setCancelled(true);
             InventoryCloseEvent close=mock(InventoryCloseEvent.class);when(close.getInventory()).thenReturn(inventory);
             gui.onInventoryClose(close);handlers.verify(()->HandlerList.unregisterAll(gui));
+        }
+    }
+
+    @Test
+    void airMedalUsesPaperAndDoesNotPreventOpeningTheWall() {
+        Inventory inventory = mock(Inventory.class);
+        ItemFactory items = mock(ItemFactory.class);
+        ItemMeta meta = mock(ItemMeta.class);
+        PluginManager manager = mock(PluginManager.class);
+        MedalCabinet plugin = mock(MedalCabinet.class);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        when(items.getItemMeta(Material.PAPER)).thenReturn(meta);
+        when(items.getItemMeta(Material.GOLD_NUGGET)).thenReturn(meta);
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class);
+             MockedStatic<MedalCabinet> plugins = mockStatic(MedalCabinet.class)) {
+            bukkit.when(() -> Bukkit.createInventory(null, 54, "Alex §6的勋章墙")).thenReturn(inventory);
+            bukkit.when(Bukkit::getItemFactory).thenReturn(items);
+            bukkit.when(Bukkit::getPluginManager).thenReturn(manager);
+            plugins.when(MedalCabinet::getPlugin).thenReturn(plugin);
+            new MedalsGui("Alex", Collections.singletonList(new Medal("air", "Cloud", "AIR", "Sky")));
+            verify(inventory).addItem(argThat((ItemStack icon) -> icon.getType() == Material.PAPER));
         }
     }
 }

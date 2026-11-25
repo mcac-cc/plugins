@@ -67,7 +67,7 @@ public class MedalsGui implements Listener {
     private Material resolveMaterial(Medal medal) {
         String materialName = medal.getMaterial();
         Material material = materialName == null ? null : Material.getMaterial(materialName.toUpperCase(Locale.ROOT));
-        if (material != null) {
+        if (material != null && material != Material.AIR) {
             return material;
         }
 
