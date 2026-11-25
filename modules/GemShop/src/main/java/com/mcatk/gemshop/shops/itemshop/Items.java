@@ -21,7 +21,12 @@ public class Items {
         if (cs != null) {
             StringBuilder stringBuilder = new StringBuilder(id + "已载入:");
             for (String key : cs.getKeys(false)) {
-                map.put(key, (Item) cs.get(key));
+                Object entry = cs.get(key);
+                if (!(entry instanceof Item) || !Item.isSellableStack(((Item) entry).getItemStack())) {
+                    GemShop.getPlugin().getLogger().warning("忽略无效商品 Items." + id + "." + key);
+                    continue;
+                }
+                map.put(key, (Item) entry);
                 stringBuilder.append(key).append(",");
             }
             GemShop.log(stringBuilder.toString());

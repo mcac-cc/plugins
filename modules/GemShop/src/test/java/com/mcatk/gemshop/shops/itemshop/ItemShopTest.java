@@ -2,8 +2,14 @@ package com.mcatk.gemshop.shops.itemshop;
 
 import com.mcatk.gem.Gem;
 import com.mcatk.gemshop.GemShop;
+import java.util.logging.Logger;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.Material;
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,5 +64,34 @@ public class ItemShopTest {
 
         verify(config, never()).set(anyString(), any());
         verify(plugin, never()).saveConfig();
+    }
+
+    @Test
+    public void emptyHandDoesNotReplaceAnExistingListing() {
+        Player player = mock(Player.class);
+        PlayerInventory inventory = mock(PlayerInventory.class);
+        when(player.getInventory()).thenReturn(inventory);
+        when(inventory.getItemInMainHand()).thenReturn(new ItemStack(Material.STONE))
+                .thenReturn(new ItemStack(Material.AIR));
+        itemShop.addItem(player, "tools", "stone", "3");
+        Item original = itemShop.getItems("tools").getMap().get("stone");
+        itemShop.addItem(player, "tools", "stone", "4");
+        Assert.assertSame(original, itemShop.getItems("tools").getMap().get("stone"));
+        verify(plugin, times(1)).saveConfigAsync();
+        verify(player).sendMessage(contains("手持"));
+    }
+
+    @Test
+    public void loadsValidItemsAlongsideAnOldEmptyListing() {
+        YamlConfiguration saved = new YamlConfiguration();
+        Item valid = new Item("stone", new ItemStack(Material.STONE), 3);
+        saved.set("Items.tools.stone", valid);
+        saved.set("Items.tools.empty", new Item("empty", new ItemStack(Material.AIR), 4));
+        when(plugin.getConfig()).thenReturn(saved);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+
+        Items loaded = new ItemShop().getItems("tools");
+        Assert.assertSame(valid, loaded.getMap().get("stone"));
+        Assert.assertFalse(loaded.getMap().containsKey("empty"));
     }
 }
