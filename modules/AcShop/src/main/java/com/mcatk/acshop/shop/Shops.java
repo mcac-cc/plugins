@@ -12,7 +12,8 @@ public class Shops {
     }
     
     public Item getItem(String id1, String id2) {
-        return shopsHashMap.get(id1).getItemHashMap().get(id2);
+        Shop shop = shopsHashMap.get(id1);
+        return shop == null ? null : shop.getItemHashMap().get(id2);
     }
     
 }

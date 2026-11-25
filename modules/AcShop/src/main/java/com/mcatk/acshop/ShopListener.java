@@ -11,9 +11,14 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 
 public class ShopListener implements Listener {
+    private static final String SHOP_MARKER = "  §6AC商店-";
+    private static final String ITEM_PREFIX = "商品ID:";
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getInventory().getTitle().contains("§6AC商店-")) {
+        String title = event.getInventory().getTitle();
+        int marker = title.indexOf(SHOP_MARKER);
+        if (marker >= 0) {
             if (event.getWhoClicked() instanceof Player) {
                 event.setCancelled(true);
                 // Security: prevent using items from the player's own inventory to trigger shop actions.
@@ -34,17 +39,11 @@ public class ShopListener implements Listener {
                 }
 
                 List<String> list = icon.getItemMeta().getLore();
-                if (list != null && !list.isEmpty()) {
-                    String[] titleParts = event.getInventory().getTitle().split("-");
-                    if (titleParts.length > 1) {
-                        String shopId = titleParts[1];
-                        String[] loreParts = list.get(0).split(":");
-                        if (loreParts.length > 1) {
-                            String itemId = loreParts[1];
-                            Item item = AcShop.getShops().getItem(shopId, itemId);
-                            new Operation().buy((Player) event.getWhoClicked(), item);
-                        }
-                    }
+                if (list != null && !list.isEmpty() && list.get(0).startsWith(ITEM_PREFIX)) {
+                    String shopId = title.substring(marker + SHOP_MARKER.length());
+                    String itemId = list.get(0).substring(ITEM_PREFIX.length());
+                    Item item = AcShop.getShops().getItem(shopId, itemId);
+                    new Operation().buy((Player) event.getWhoClicked(), item);
                 }
             }
         }
@@ -52,7 +51,7 @@ public class ShopListener implements Listener {
     
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getInventory().getTitle().contains("§6AC商店-")
+        if (event.getInventory().getTitle().contains(SHOP_MARKER)
                 && event.getRawSlots().stream().anyMatch(slot -> slot < event.getInventory().getSize())) {
             event.setCancelled(true);
         }
