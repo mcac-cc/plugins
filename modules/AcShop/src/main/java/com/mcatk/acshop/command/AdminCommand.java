@@ -6,6 +6,8 @@ import com.mcatk.acshop.commodity.Item;
 import com.mcatk.acshop.commodity.ItemType;
 import com.mcatk.acshop.shop.Shop;
 import com.mcatk.itemmanager.ItemManager;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -80,9 +82,6 @@ public class AdminCommand implements CommandExecutor {
         }
 
         String shopId = args[2];
-        if (!AcShop.getShops().getShopsHashMap().containsKey(shopId)) {
-            AcShop.getShops().getShopsHashMap().put(shopId, new Shop(shopId));
-        }
         String itemId = args[3];
         int price = parsePositivePrice(args[4]);
         if (price <= 0) {
@@ -100,9 +99,13 @@ public class AdminCommand implements CommandExecutor {
 
         // 商品类型固定为保留字 Shop_<shopId>
         String sortId = "Shop_" + shopId;
-        ItemManager.addItem(sortId, itemId,
-                ((Player) sender).getInventory().getItemInMainHand());
-        AcShop.getShops().getShopsHashMap().get(shopId).getItemHashMap().put(
+        ItemStack held = ((Player) sender).getInventory().getItemInMainHand();
+        if (held == null || held.getType() == Material.AIR || held.getAmount() <= 0) {
+            sender.sendMessage("请先手持要上架的物品");
+            return false;
+        }
+        ItemManager.addItem(sortId, itemId, held.clone());
+        AcShop.getShops().getShopsHashMap().computeIfAbsent(shopId, Shop::new).getItemHashMap().put(
                 itemId, new Item(ItemType.ITEM_STACK, itemId, price, sortId, itemId)
         );
         sender.sendMessage("Ok");
