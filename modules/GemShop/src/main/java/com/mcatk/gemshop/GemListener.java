@@ -11,10 +11,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.List;
 
 public class GemListener implements Listener {
+    private static final String SHOP_PREFIX = "§6宝石商店-";
     
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getInventory().getTitle().contains("§6宝石商店-")) {
+        if (event.getInventory().getTitle().startsWith(SHOP_PREFIX)) {
             if (event.getWhoClicked() instanceof Player) {
                 event.setCancelled(true);
                 // Security: Prevent using items from player's inventory to trigger shop actions
@@ -37,18 +38,12 @@ public class GemListener implements Listener {
                 }
 
                 List<String> list = meta.getLore();
-                if (list != null && !list.isEmpty()) {
-                    String[] titleParts = event.getInventory().getTitle().split("-");
-                    if (titleParts.length > 1) {
-                        String shopId = titleParts[1];
-                        String[] loreParts = list.get(0).split(":");
-                        if (loreParts.length > 1) {
-                            String itemId = loreParts[1];
-                            GemShop.getPlugin().getShopFactory().
-                                    getItemShop().buyItem(
-                                            (Player) event.getWhoClicked(),shopId, itemId
-                            );
-                        }
+                if (list != null && !list.isEmpty() && list.get(0).startsWith("ID:")) {
+                    String shopId = event.getInventory().getTitle().substring(SHOP_PREFIX.length());
+                    String itemId = list.get(0).substring("ID:".length());
+                    if (!shopId.isEmpty() && !itemId.isEmpty()) {
+                        GemShop.getPlugin().getShopFactory().getItemShop()
+                                .buyItem((Player) event.getWhoClicked(), shopId, itemId);
                     }
                 }
             }
@@ -56,7 +51,7 @@ public class GemListener implements Listener {
     }
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getInventory().getTitle().contains("§6宝石商店-")
+        if (event.getInventory().getTitle().startsWith(SHOP_PREFIX)
                 && event.getRawSlots().stream().anyMatch(slot -> slot < event.getInventory().getSize())) {
             event.setCancelled(true);
         }
