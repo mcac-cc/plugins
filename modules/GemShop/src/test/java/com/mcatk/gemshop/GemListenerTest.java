@@ -85,13 +85,13 @@ public class GemListenerTest {
             when(view.getTopInventory()).thenReturn(topInventory);
 
             // Mock Top Inventory (Shop)
-            when(topInventory.getTitle()).thenReturn("§6宝石商店-TestShop");
+            when(topInventory.getTitle()).thenReturn("§6宝石商店-tools-rare");
 
             // Mock Item
             when(event.getCurrentItem()).thenReturn(itemStack);
             when(itemStack.hasItemMeta()).thenReturn(true);
             when(itemStack.getItemMeta()).thenReturn(itemMeta);
-            when(itemMeta.getLore()).thenReturn(Collections.singletonList("ID:TestItem"));
+            when(itemMeta.getLore()).thenReturn(Collections.singletonList("ID:ore:gold"));
 
             // IMPORTANT: Simulate click in shop inventory (top inventory)
             when(event.getClickedInventory()).thenReturn(topInventory);
@@ -100,7 +100,7 @@ public class GemListenerTest {
             gemListener.onInventoryClick(event);
 
             // Verify: buyItem SHOULD be called
-            verify(itemShop, times(1)).buyItem(player, "TestShop", "TestItem");
+            verify(itemShop, times(1)).buyItem(player, "tools-rare", "ore:gold");
         }
     }
 }
