@@ -45,6 +45,10 @@ public class ItemShop {
     
 
     public void addItem(Player player, String shopId, String itemId, String price) {
+        if (shopId.isEmpty() || itemId.isEmpty() || shopId.contains(".") || itemId.contains(".")) {
+            player.sendMessage(Message.ERROR + "商店ID和物品ID不能为空或包含句点。");
+            return;
+        }
         ItemStack held = player.getInventory().getItemInMainHand();
         if (!Item.isSellableStack(held)) {
             player.sendMessage(Message.ERROR + "请先手持要上架的物品");
@@ -62,10 +66,9 @@ public class ItemShop {
     
     public void delItem(String shopId, String itemId) {
         Items items = itemsMap.get(shopId);
-        if (items == null) {
+        if (items == null || items.getMap().remove(itemId) == null) {
             return;
         }
-        items.getMap().remove(itemId);
         GemShop.getPlugin().getConfig().set("Items." + shopId + "." + itemId, null);
         GemShop.getPlugin().saveConfigAsync();
     }

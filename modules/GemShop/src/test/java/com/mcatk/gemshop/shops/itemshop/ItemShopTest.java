@@ -82,6 +82,43 @@ public class ItemShopTest {
     }
 
     @Test
+    public void dottedIdsCannotOverwriteAnExistingListingInYaml() {
+        YamlConfiguration saved = new YamlConfiguration();
+        Item original = new Item("ore", new ItemStack(Material.STONE), 3);
+        saved.set("Items.tools.ore", original);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        when(plugin.getConfig()).thenReturn(saved);
+        Player player = mock(Player.class);
+        PlayerInventory inventory = mock(PlayerInventory.class);
+        when(player.getInventory()).thenReturn(inventory);
+        when(inventory.getItemInMainHand()).thenReturn(new ItemStack(Material.STONE));
+
+        itemShop = new ItemShop();
+        itemShop.addItem(player, "tools", "ore.gold", "5");
+        itemShop.addItem(player, "tools.ore", "gold", "5");
+
+        Assert.assertSame(original, new ItemShop().getItems("tools").getMap().get("ore"));
+        Assert.assertFalse(itemShop.getItems("tools").getMap().containsKey("ore.gold"));
+        Assert.assertNull(itemShop.getItems("tools.ore"));
+        verify(plugin, never()).saveConfigAsync();
+        verify(player, times(2)).sendMessage(contains("ID"));
+    }
+
+    @Test
+    public void deletingAnUnlistedKeyPreservesItsConfiguration() {
+        YamlConfiguration saved = new YamlConfiguration();
+        saved.set("Items.tools.legacy.nested", "keep");
+        when(plugin.getConfig()).thenReturn(saved);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        itemShop = new ItemShop();
+
+        itemShop.delItem("tools", "legacy");
+
+        Assert.assertEquals("keep", saved.getString("Items.tools.legacy.nested"));
+        verify(plugin, never()).saveConfigAsync();
+    }
+
+    @Test
     public void loadsValidItemsAlongsideAnOldEmptyListing() {
         YamlConfiguration saved = new YamlConfiguration();
         Item valid = new Item("stone", new ItemStack(Material.STONE), 3);
