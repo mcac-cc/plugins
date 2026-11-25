@@ -8,6 +8,11 @@ import org.bukkit.entity.Player;
 
 public class MedalPapi extends PlaceholderExpansion {
     @Override
+    public boolean persist() {
+        return true;
+    }
+
+    @Override
     public String getIdentifier() {
         return "medalcabinet";
     }
