@@ -18,6 +18,7 @@ import java.util.logging.Level;
 public final class MedalCabinet extends JavaPlugin {
 
     private static MedalCabinet plugin;
+    private MedalPapi expansion;
     private final Set<String> titleLoads = ConcurrentHashMap.newKeySet();
     private final Map<String, Long> titleRequests = new ConcurrentHashMap<>();
 
@@ -38,6 +39,10 @@ public final class MedalCabinet extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (expansion != null) {
+            expansion.unregister();
+            expansion = null;
+        }
         SQLManager.shutdownInstance();
     }
 
@@ -83,8 +88,11 @@ public final class MedalCabinet extends JavaPlugin {
 
     private void regDependency() {
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new MedalPapi().register();
-            getLogger().info("检测到PlaceholderAPI，已启动PAPI变量");
+            MedalPapi candidate = new MedalPapi();
+            if (candidate.register()) {
+                expansion = candidate;
+                getLogger().info("检测到PlaceholderAPI，已启动PAPI变量");
+            }
         }
     }
 }
