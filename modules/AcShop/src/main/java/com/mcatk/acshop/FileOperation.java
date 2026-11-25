@@ -20,10 +20,8 @@ public class FileOperation {
     }
     
     public void saveShops(Shops shops) {
-        try {
-            FileWriter writer = new FileWriter(shopsFile);
+        try (FileWriter writer = new FileWriter(shopsFile)) {
             gson.toJson(shops, writer);
-            writer.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -31,11 +29,11 @@ public class FileOperation {
     
     public Shops loadShops() {
         Shops shops = null;
-        try {
-            if (shopsFile.exists()) {
-                FileReader reader = new FileReader(shopsFile);
-                shops = gson.fromJson(reader, Shops.class);
-            }
+        if (!shopsFile.exists()) {
+            return new Shops();
+        }
+        try (FileReader reader = new FileReader(shopsFile)) {
+            shops = gson.fromJson(reader, Shops.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
