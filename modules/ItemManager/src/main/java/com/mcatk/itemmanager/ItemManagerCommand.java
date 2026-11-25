@@ -47,6 +47,10 @@ public class ItemManagerCommand implements CommandExecutor {
         }
     }
 
+    private boolean isConfigKey(String id) {
+        return !id.isEmpty() && id.indexOf(ItemManager.getPlugin().getConfig().options().pathSeparator()) < 0;
+    }
+
     private boolean create() {
         if (args.length < 2) {
             sender.sendMessage("用法: /im create <类型ID>");
@@ -54,7 +58,7 @@ public class ItemManagerCommand implements CommandExecutor {
         }
 
         String sortId = args[1];
-        if (sortId.isEmpty() || sortId.indexOf(ItemManager.getPlugin().getConfig().options().pathSeparator()) >= 0) {
+        if (!isConfigKey(sortId)) {
             sender.sendMessage("类型ID必须是单个配置键。");
             return true;
         }
@@ -75,6 +79,10 @@ public class ItemManagerCommand implements CommandExecutor {
 
         String sortId = args[1];
         String itemId = args[2];
+        if (!isConfigKey(sortId) || !isConfigKey(itemId)) {
+            sender.sendMessage("类型ID和商品ID必须是单个配置键。");
+            return true;
+        }
         Player player = (Player) sender;
         ItemStack itemInHand = player.getInventory().getItemInMainHand();
         if (itemInHand == null || itemInHand.getType() == Material.AIR) {

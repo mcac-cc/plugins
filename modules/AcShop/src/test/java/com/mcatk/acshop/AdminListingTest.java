@@ -30,6 +30,9 @@ public class AdminListingTest {
             AdminCommand command = new AdminCommand();
             command.onCommand(player, null, "asadmin", new String[]{"add", "item", "badprice", "egg", "0"});
             command.onCommand(player, null, "asadmin", new String[]{"add", "item", "empty", "egg", "5"});
+            when(inventory.getItemInMainHand()).thenReturn(new ItemStack(Material.STONE));
+            command.onCommand(player, null, "asadmin", new String[]{"add", "item", "tools", "ore.gold", "5"});
+            command.onCommand(player, null, "asadmin", new String[]{"add", "item", "tools.ore", "gold", "5"});
             assertTrue(shops.getShopsHashMap().isEmpty());
             templates.verifyNoInteractions();
             assertTrue(files.constructed().isEmpty());

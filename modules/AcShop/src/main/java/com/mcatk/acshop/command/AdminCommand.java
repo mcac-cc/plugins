@@ -83,6 +83,10 @@ public class AdminCommand implements CommandExecutor {
 
         String shopId = args[2];
         String itemId = args[3];
+        if (shopId.isEmpty() || itemId.isEmpty() || shopId.contains(".") || itemId.contains(".")) {
+            sender.sendMessage("商店ID和商品ID不能为空或包含句点。");
+            return false;
+        }
         int price = parsePositivePrice(args[4]);
         if (price <= 0) {
             sender.sendMessage(HELP_INVALID_PRICE);

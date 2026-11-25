@@ -84,6 +84,35 @@ public class ItemManagerCommandTest {
     }
 
     @Test
+    public void addingDottedIdsPreservesTheExistingTemplateAfterReload() {
+        ItemManager plugin = mock(ItemManager.class);
+        YamlConfiguration config = new YamlConfiguration();
+        ItemStack original = new ItemStack(Material.STONE, 8);
+        config.set("tools.ore", original);
+        when(plugin.getConfig()).thenReturn(config);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        Player player = mock(Player.class);
+        PlayerInventory inventory = mock(PlayerInventory.class);
+        when(player.isOp()).thenReturn(true);
+        when(player.getInventory()).thenReturn(inventory);
+        when(inventory.getItemInMainHand()).thenReturn(new ItemStack(Material.STONE));
+        try (MockedStatic<ItemManager> manager = mockStatic(ItemManager.class)) {
+            manager.when(ItemManager::getPlugin).thenReturn(plugin);
+            ItemSort catalog = new ItemSort();
+            manager.when(ItemManager::getItemSort).thenReturn(catalog);
+            ItemManagerCommand command = new ItemManagerCommand();
+            command.onCommand(player, null, "im", new String[]{"add", "tools", "ore.gold"});
+            command.onCommand(player, null, "im", new String[]{"add", "tools.ore", "gold"});
+
+            assertNotNull(new ItemSort().getItem("tools", "ore"));
+            assertSame(original, config.getItemStack("tools.ore"));
+            assertNull(catalog.getItem("tools", "ore.gold"));
+            verify(plugin, never()).saveConfig();
+            verify(player, never()).sendMessage("Ok");
+        }
+    }
+
+    @Test
     public void getReportsTheUndeliveredAmount() {
         Player player = mock(Player.class);
         PlayerInventory inventory = mock(PlayerInventory.class);
