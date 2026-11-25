@@ -20,6 +20,12 @@ public class ItemSort {
     }
 
     public void createSort(String id) {
+        if (itemsHashMap.containsKey(id)) {
+            return;
+        }
+        ItemManager plugin = ItemManager.getPlugin();
+        plugin.getConfig().createSection(id);
+        plugin.saveConfig();
         itemsHashMap.put(id, new Items(id));
     }
 

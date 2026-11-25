@@ -54,6 +54,10 @@ public class ItemManagerCommand implements CommandExecutor {
         }
 
         String sortId = args[1];
+        if (sortId.isEmpty() || sortId.indexOf(ItemManager.getPlugin().getConfig().options().pathSeparator()) >= 0) {
+            sender.sendMessage("类型ID必须是单个配置键。");
+            return true;
+        }
         ItemManager.getItemSort().createSort(sortId);
         sender.sendMessage("Ok");
         return true;
@@ -101,7 +105,12 @@ public class ItemManagerCommand implements CommandExecutor {
             return true;
         }
 
-        ((Player) sender).getInventory().addItem(item.clone());
+        int remaining = ((Player) sender).getInventory().addItem(item.clone())
+                .values().stream().mapToInt(ItemStack::getAmount).sum();
+        if (remaining > 0) {
+            sender.sendMessage("背包空间不足，还有 " + remaining + " 个物品未领取。");
+            return true;
+        }
         sender.sendMessage("Ok");
         return true;
     }
