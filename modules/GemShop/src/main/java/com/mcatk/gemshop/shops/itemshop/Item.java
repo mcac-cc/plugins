@@ -1,5 +1,6 @@
 package com.mcatk.gemshop.shops.itemshop;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 
@@ -17,6 +18,10 @@ public class Item implements ConfigurationSerializable {
         this.price = price;
     }
     
+    static boolean isSellableStack(ItemStack stack) {
+        return stack != null && stack.getType() != Material.AIR && stack.getAmount() > 0;
+    }
+
     public String getId() {
         return id;
     }

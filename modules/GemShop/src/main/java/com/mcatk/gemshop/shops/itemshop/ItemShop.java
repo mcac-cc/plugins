@@ -45,8 +45,12 @@ public class ItemShop {
     
 
     public void addItem(Player player, String shopId, String itemId, String price) {
-        Item item = new Item(itemId, player.getInventory().getItemInMainHand(),
-                Integer.parseInt(price));
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (!Item.isSellableStack(held)) {
+            player.sendMessage(Message.ERROR + "请先手持要上架的物品");
+            return;
+        }
+        Item item = new Item(itemId, held.clone(), Integer.parseInt(price));
         if (itemsMap.get(shopId) == null) {
             itemsMap.put(shopId, new Items(shopId));
         }
